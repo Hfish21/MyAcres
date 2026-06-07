@@ -14,6 +14,10 @@ Read these before doing substantive work — they hold the *why*:
 
 - **[docs/brief.md](docs/brief.md)** — vision, scope, what's in/out for v1
 - **[docs/architecture/overview.md](docs/architecture/overview.md)** — shell + module design
+- **[docs/design/paper-desktop.md](docs/design/paper-desktop.md)** — the **binding design
+  language** ("Paper Desktop"). All UI work follows this: flat windows on warm paper, sans-first
+  with mono as data/chrome texture, the token set in §8, the `Window` component as the core
+  primitive. ([ADR-0007](docs/decisions/0007-design-language-paper-desktop.md))
 - **[docs/decisions/](docs/decisions/)** — ADRs. **These are binding.** Don't contradict an
   accepted ADR without proposing a new ADR that supersedes it.
 

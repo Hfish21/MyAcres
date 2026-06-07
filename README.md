@@ -37,6 +37,7 @@ All project context lives in [`docs/`](docs/):
 
 - **[Vision & brief](docs/brief.md)** — what we're building and why
 - **[Architecture overview](docs/architecture/overview.md)** — the shell + module design
+- **[Design language](docs/design/paper-desktop.md)** — "Paper Desktop": the look & feel
 - **[Decision records (ADRs)](docs/decisions/)** — *why* things are the way they are
 - **[Feature specs](docs/features/)** — detailed specs as features get built
 
