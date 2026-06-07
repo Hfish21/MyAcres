@@ -104,6 +104,7 @@ export default function HomePage() {
       />
       <CropDeleteDialog
         crop={deleteTarget}
+        plantingCount={deleteTarget ? store.plantingsForCrop(deleteTarget.id).length : 0}
         onOpenChange={(o) => {
           if (!o) setDeleteTarget(null);
         }}

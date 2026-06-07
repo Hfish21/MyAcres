@@ -10,34 +10,27 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import type { Crop } from "@/lib/garden/schema";
+import type { Planting } from "@/lib/garden/schema";
 
-interface CropDeleteDialogProps {
-  crop: Crop | null;
-  plantingCount?: number;
+interface PlantingDeleteDialogProps {
+  planting: Planting | null;
+  label: string;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
 }
 
-export function CropDeleteDialog({
-  crop,
-  plantingCount = 0,
+export function PlantingDeleteDialog({
+  planting,
+  label,
   onOpenChange,
   onConfirm,
-}: CropDeleteDialogProps) {
-  const label = crop ? `${crop.name}${crop.variety ? ` — ${crop.variety}` : ""}` : "";
-
+}: PlantingDeleteDialogProps) {
   return (
-    <Dialog open={!!crop} onOpenChange={onOpenChange}>
+    <Dialog open={!!planting} onOpenChange={onOpenChange}>
       <DialogContent showCloseButton={false} className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Delete crop</DialogTitle>
-          <DialogDescription>
-            Delete “{label}”? This removes the crop profile.
-            {plantingCount > 0
-              ? ` It also removes ${plantingCount} planting${plantingCount === 1 ? "" : "s"} of it.`
-              : ""}
-          </DialogDescription>
+          <DialogTitle>Delete planting</DialogTitle>
+          <DialogDescription>Remove the planting of {label}?</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
