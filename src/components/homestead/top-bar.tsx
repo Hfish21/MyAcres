@@ -10,7 +10,8 @@ import { FileControls } from "./file-controls";
 // module strip (ADR-0005); kept to a static list for now (ADR-0002).
 
 const NAV = [
-  { href: "/", label: "Crops" },
+  { href: "/", label: "Plan" },
+  { href: "/crops", label: "Crops" },
   { href: "/spaces", label: "Spaces" },
   { href: "/plantings", label: "Plantings" },
 ];
