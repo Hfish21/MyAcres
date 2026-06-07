@@ -30,3 +30,4 @@ instead, write a new ADR that supersedes it.
 | [0006](0006-tech-stack-pwa.md) | Static PWA tech stack | Accepted |
 | [0007](0007-design-language-paper-desktop.md) | Design language — "Paper Desktop" | Accepted |
 | [0008](0008-homestead-file-schema.md) | The `.homestead` file schema | Accepted |
+| [0009](0009-space-planting-model.md) | Space + Planting model | Accepted |
