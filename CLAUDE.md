@@ -23,8 +23,25 @@ Read these before doing substantive work — they hold the *why*:
 
 ## Status
 
-**Pre-build.** This repo currently holds documentation only. There is no application code
-yet. When we start building, this file should be updated with the real commands.
+**Phase 0 (scaffold + design system) — in progress.** The app is scaffolded at the repo
+root (no `frontend/` subdir — there's no backend). The static "Paper Desktop" showcase, the
+`Window` primitive, reskinned base components, fonts/tokens, and PWA setup are in place. No
+storage, data, or modules yet — those are Phase 1+.
+
+## Commands
+
+```bash
+pnpm install        # install deps
+pnpm dev            # dev server at http://localhost:3000
+pnpm build          # static export to out/  (output: "export")
+pnpm preview        # serve the built out/ locally (npx serve out)
+pnpm lint           # eslint
+pnpm icons          # regenerate PWA icons from public/logo.svg (sharp)
+```
+
+Deploy: pushing/merging to `main` runs `.github/workflows/deploy-pages.yml` (build → GitHub
+Pages). The `myacres.app` custom domain (CNAME committed) is **not connected yet** — go-live
+is deferred until there's something real.
 
 ## Core principles (binding — see ADRs)
 
@@ -43,11 +60,12 @@ yet. When we start building, this file should be updated with the real commands.
 5. **Cross-cutting concerns live in core.** Tasks/scheduling and journaling belong to the
    shell, not to any one module. ([ADR-0005](docs/decisions/0005-core-module-architecture.md))
 
-## Intended tech stack
+## Tech stack
 
-Not yet scaffolded. Planned:
+Scaffolded in Phase 0 (mirrors BudgetOnTarget):
 
-- **Frontend:** Next.js (static export) + TypeScript + Tailwind CSS + shadcn/ui
+- **Frontend:** Next.js 16 (App Router, static export) + React 19 + TypeScript + Tailwind v4
+  + shadcn/ui (`base-nova`, Base UI — not Radix). pnpm. App lives at the repo root.
 - **Storage:** file-first (`.homestead` JSON) via the File System Access API, with
   download/upload fallback. Swappable adapter pattern.
 - **Data validation:** Zod schemas for the file and each module's data slice
