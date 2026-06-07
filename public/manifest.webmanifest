@@ -1,0 +1,29 @@
+{
+  "name": "MyAcres",
+  "short_name": "MyAcres",
+  "description": "Offline-first homestead management.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#F2ECDD",
+  "theme_color": "#9C4A2E",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
