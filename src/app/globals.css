@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+/* Dark-mode hook kept for a future pass (ADR-0007 §2.4); no .dark block shipped yet. */
+@custom-variant dark (&:is(.dark *));
+
+/*
+  Paper Desktop design language — ADR-0007 / docs/design/paper-desktop.md §8.
+  Flat windows on warm paper. Borders only, no shadows. Hex values are taken
+  directly from the spec (contrast already WCAG-verified there).
+*/
+:root {
+  /* Surfaces (the paper) */
+  --canvas: #f2ecdd; /* the "desktop" / app background */
+  --panel: #fbf7ee; /* window body — lightest surface */
+  --titlebar: #e4dbc5; /* flat window title-bar fill */
+  --inset: #e7dfcd; /* zebra rows, hovers, wells */
+
+  /* Ink (text & borders) */
+  --ink: #2a2620; /* primary text (warm charcoal) */
+  --ink-2: #544d40; /* secondary text / title-bar text */
+  --ink-3: #6e6655; /* muted / meta */
+  --line: #c9bda2; /* window & card borders, hairlines */
+
+  /* Earthy semantic accents */
+  --rust: #9c4a2e; /* primary — the one saturated accent */
+  --olive: #5a6b3b; /* growing / success */
+  --amber: #c97a1a; /* harvest (fill; needs dark text) */
+  --ochre: #d9a93c; /* warning (fill; needs dark text) */
+  --barn: #8b2e22; /* danger */
+  --inkblue: #3e5a6b; /* info / today marker */
+
+  /* On-paper accent text variants that clear AA (spec §2.3) */
+  --olive-ink: #4c5a32;
+  --amber-ink: #9a5b12;
+  --ochre-ink: #7e6019;
+
+  --radius: 6px;
+
+  /* shadcn semantic aliases → Paper Desktop tokens (spec §10.1) */
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: var(--panel);
+  --card-foreground: var(--ink);
+  --popover: var(--panel);
+  --popover-foreground: var(--ink);
+  --primary: var(--rust);
+  --primary-foreground: var(--canvas);
+  --secondary: var(--inset);
+  --secondary-foreground: var(--ink);
+  --muted: var(--inset);
+  --muted-foreground: var(--ink-3);
+  --accent: var(--inset);
+  --accent-foreground: var(--ink);
+  --destructive: var(--barn);
+  --destructive-foreground: var(--canvas);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--rust);
+}
+
+@theme inline {
+  /* Paper Desktop utilities (bg-canvas, text-ink, border-line, bg-olive/12, …) */
+  --color-canvas: var(--canvas);
+  --color-panel: var(--panel);
+  --color-titlebar: var(--titlebar);
+  --color-inset: var(--inset);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-rust: var(--rust);
+  --color-olive: var(--olive);
+  --color-amber: var(--amber);
+  --color-ochre: var(--ochre);
+  --color-barn: var(--barn);
+  --color-inkblue: var(--inkblue);
+  --color-olive-ink: var(--olive-ink);
+  --color-amber-ink: var(--amber-ink);
+  --color-ochre-ink: var(--ochre-ink);
+
+  /* shadcn semantic color tokens */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: 4px;
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: var(--font-ibm-plex-sans);
+  --font-mono: var(--font-ibm-plex-mono);
+}
+
+body {
+  background: var(--canvas);
+  color: var(--ink);
+}

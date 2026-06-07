@@ -4,8 +4,9 @@ A portable, offline-first **homestead management** app. A modular tool for runni
 homestead — starting with the **garden** — that you can grow over time, one feature at a
 time.
 
-> Status: **pre-build.** This repo currently holds the vision, architecture, and decision
-> records. No application code yet.
+> Status: **Phase 0 — scaffold + design system.** The app is scaffolded as a static PWA with
+> the "Paper Desktop" design language and a showcase screen. Storage, the core shell, and the
+> Garden module come next. Run `pnpm dev` to see it.
 
 ## What it is
 
@@ -41,10 +42,20 @@ All project context lives in [`docs/`](docs/):
 - **[Decision records (ADRs)](docs/decisions/)** — *why* things are the way they are
 - **[Feature specs](docs/features/)** — detailed specs as features get built
 
-## Tech (intended)
+## Tech
 
-Static PWA: Next.js + TypeScript + Tailwind CSS + shadcn/ui, file-first storage. No
-required backend. See [ADR-0003](docs/decisions/0003-file-first-storage-no-database.md).
+Static PWA: Next.js 16 + React 19 + TypeScript + Tailwind v4 + shadcn/ui, file-first storage
+(coming in Phase 1). No required backend. See
+[ADR-0006](docs/decisions/0006-tech-stack-pwa.md) and
+[ADR-0003](docs/decisions/0003-file-first-storage-no-database.md).
+
+## Development
+
+```bash
+pnpm install
+pnpm dev      # http://localhost:3000
+pnpm build    # static export → out/
+```
 
 ## Future
 
