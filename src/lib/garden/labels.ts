@@ -5,6 +5,8 @@ import type {
   LightLevel,
   WaterLevel,
   Season,
+  SpaceType,
+  PlantingStatus,
 } from "./schema";
 
 // Human-readable labels for the Crop enums, shared by the table and the form so
@@ -56,4 +58,22 @@ export const SEASON_ABBR: Record<Season, string> = {
   summer: "Su",
   fall: "Fa",
   winter: "Wi",
+};
+
+export const SPACE_TYPE_LABELS: Record<SpaceType, string> = {
+  bed: "Bed",
+  row: "Row",
+  container: "Container",
+  ground: "Ground",
+  other: "Other",
+};
+
+export const PLANTING_STATUS_LABELS: Record<PlantingStatus, string> = {
+  planned: "Planned",
+  started: "Started",
+  transplanted: "Transplanted",
+  growing: "Growing",
+  harvesting: "Harvesting",
+  done: "Done",
+  failed: "Failed",
 };

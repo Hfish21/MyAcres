@@ -1,4 +1,11 @@
-import type { Crop, CropInput } from "@/lib/garden/schema";
+import type {
+  Crop,
+  CropInput,
+  Space,
+  SpaceInput,
+  Planting,
+  PlantingInput,
+} from "@/lib/garden/schema";
 import {
   APP_VERSION,
   FILE_FORMAT,
@@ -13,6 +20,8 @@ import { createEmptyHomestead, type HomesteadFile } from "./envelope";
 
 export class HomesteadStore {
   crops: Crop[] = [];
+  spaces: Space[] = [];
+  plantings: Planting[] = [];
 
   private _createdAt = new Date().toISOString();
   // Future modules / core blocks we don't understand yet — preserved verbatim
@@ -49,6 +58,8 @@ export class HomesteadStore {
    *  bumps its dataVersion after load. Leaves the store clean. */
   load(file: HomesteadFile): void {
     this.crops = file.modules.garden?.data.crops ?? [];
+    this.spaces = file.modules.garden?.data.spaces ?? [];
+    this.plantings = file.modules.garden?.data.plantings ?? [];
     this._createdAt = file.meta.createdAt;
     const modules = file.modules as Record<string, unknown>;
     this._unknownModules = {};
@@ -62,7 +73,11 @@ export class HomesteadStore {
     const modules = {
       garden: {
         moduleVersion: GARDEN_MODULE_VERSION,
-        data: { crops: this.crops },
+        data: {
+          crops: this.crops,
+          spaces: this.spaces,
+          plantings: this.plantings,
+        },
       },
       ...this._unknownModules,
     } as HomesteadFile["modules"];
@@ -110,10 +125,92 @@ export class HomesteadStore {
     return crop;
   }
 
+  /** Deletes a crop AND cascades to any plantings that reference it (no orphans). */
   deleteCrop(id: string): boolean {
     const i = this.crops.findIndex((c) => c.id === id);
     if (i === -1) return false;
     this.crops.splice(i, 1);
+    this.plantings = this.plantings.filter((p) => p.cropId !== id);
+    this._notify();
+    return true;
+  }
+
+  // --- space CRUD ---
+
+  spaceById(id: string): Space | undefined {
+    return this.spaces.find((s) => s.id === id);
+  }
+
+  addSpace(input: SpaceInput): Space {
+    const now = new Date().toISOString();
+    const space: Space = {
+      ...input,
+      id: crypto.randomUUID(),
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.spaces.push(space);
+    this._notify();
+    return space;
+  }
+
+  updateSpace(id: string, input: SpaceInput): Space | undefined {
+    const space = this.spaceById(id);
+    if (!space) return undefined;
+    Object.assign(space, input, { updatedAt: new Date().toISOString() });
+    this._notify();
+    return space;
+  }
+
+  /** Deletes a space AND cascades to any plantings in it (no orphans). */
+  deleteSpace(id: string): boolean {
+    const i = this.spaces.findIndex((s) => s.id === id);
+    if (i === -1) return false;
+    this.spaces.splice(i, 1);
+    this.plantings = this.plantings.filter((p) => p.spaceId !== id);
+    this._notify();
+    return true;
+  }
+
+  // --- planting CRUD ---
+
+  plantingById(id: string): Planting | undefined {
+    return this.plantings.find((p) => p.id === id);
+  }
+
+  plantingsForCrop(cropId: string): Planting[] {
+    return this.plantings.filter((p) => p.cropId === cropId);
+  }
+
+  plantingsForSpace(spaceId: string): Planting[] {
+    return this.plantings.filter((p) => p.spaceId === spaceId);
+  }
+
+  addPlanting(input: PlantingInput): Planting {
+    const now = new Date().toISOString();
+    const planting: Planting = {
+      ...input,
+      id: crypto.randomUUID(),
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.plantings.push(planting);
+    this._notify();
+    return planting;
+  }
+
+  updatePlanting(id: string, input: PlantingInput): Planting | undefined {
+    const planting = this.plantingById(id);
+    if (!planting) return undefined;
+    Object.assign(planting, input, { updatedAt: new Date().toISOString() });
+    this._notify();
+    return planting;
+  }
+
+  deletePlanting(id: string): boolean {
+    const i = this.plantings.findIndex((p) => p.id === id);
+    if (i === -1) return false;
+    this.plantings.splice(i, 1);
     this._notify();
     return true;
   }

@@ -34,7 +34,10 @@ export function createEmptyHomestead(): HomesteadFile {
     schemaVersion: SCHEMA_VERSION,
     meta: { createdAt: now, updatedAt: now, appVersionLastWritten: APP_VERSION },
     modules: {
-      garden: { moduleVersion: GARDEN_MODULE_VERSION, data: { crops: [] } },
+      garden: {
+        moduleVersion: GARDEN_MODULE_VERSION,
+        data: { crops: [], spaces: [], plantings: [] },
+      },
     },
   };
 }
