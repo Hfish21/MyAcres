@@ -12,6 +12,7 @@ import { FileControls } from "./file-controls";
 const NAV = [
   { href: "/", label: "Crops" },
   { href: "/spaces", label: "Spaces" },
+  { href: "/plantings", label: "Plantings" },
 ];
 
 export function TopBar() {
