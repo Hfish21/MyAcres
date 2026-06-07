@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import { ServiceWorkerRegister } from "@/components/sw-register";
+import { HomesteadProvider } from "@/components/homestead-provider";
+import { AppShell } from "@/components/homestead/app-shell";
 import "./globals.css";
 
 // Paper Desktop typography (ADR-0007 §3): the app reads in a humanist sans;
@@ -47,7 +49,9 @@ export default function RootLayout({
         className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} font-sans antialiased bg-canvas text-ink`}
       >
         <ServiceWorkerRegister />
-        {children}
+        <HomesteadProvider>
+          <AppShell>{children}</AppShell>
+        </HomesteadProvider>
       </body>
     </html>
   );
