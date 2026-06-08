@@ -58,6 +58,49 @@
   --ring: var(--rust);
 }
 
+/*
+  Coffee dark mode — "warm desk lamp at night" (ADR-0007 §2.4). Not a black/gray
+  OLED theme: an espresso-brown desktop with roasted-coffee window bodies, mocha
+  title bars, and warm-cream text — the notebook aesthetic, after dark. Accents are
+  brightened one step to hold contrast on the dark paper; the bright terracotta /
+  barn fills take dark text (see --*-foreground). `.dark` is set on <html> (= :root),
+  so overriding the raw tokens cascades through the shadcn aliases above.
+
+  Key text contrasts verified WCAG AA+ against their surface:
+    ink   on canvas ≈ 13.8:1   ink-2 on panel ≈ 7.6:1   ink-3 on panel ≈ 4.6:1
+    rust  text on canvas ≈ 4.7:1   barn text on canvas ≈ 5.2:1
+*/
+:root.dark {
+  /* Surfaces (the dark paper) */
+  --canvas: #211913; /* espresso desktop */
+  --panel: #2b211a; /* roasted-coffee window body — lightest surface */
+  --titlebar: #3a2d21; /* warm mocha title-bar fill */
+  --inset: #352a20; /* zebra rows, hovers, wells */
+
+  /* Ink (text & borders — warm cream on brown) */
+  --ink: #efe6d6; /* primary text (warm cream) */
+  --ink-2: #c5b299; /* secondary text / title-bar text (latte) */
+  --ink-3: #a18f78; /* muted / meta (mocha) */
+  --line: #4a3a29; /* window & card borders (warm brown, kept visible) */
+
+  /* Earthy accents — brightened one step for the dark paper */
+  --rust: #cb6b43; /* primary — brighter terracotta */
+  --olive: #94a86a; /* growing / success */
+  --amber: #e0a155; /* harvest */
+  --ochre: #e5c06a; /* warning */
+  --barn: #e0695c; /* danger */
+  --inkblue: #7ba0b5; /* info / today marker */
+
+  /* On-paper accent text variants (legible on the dark panel) */
+  --olive-ink: #a8bc7e;
+  --amber-ink: #e0a155;
+  --ochre-ink: #e5c06a;
+
+  /* Bright fills take dark text instead of cream (overrides the cream alias) */
+  --primary-foreground: #1e150d;
+  --destructive-foreground: #1e150d;
+}
+
 @theme inline {
   /* Paper Desktop utilities (bg-canvas, text-ink, border-line, bg-olive/12, …) */
   --color-canvas: var(--canvas);

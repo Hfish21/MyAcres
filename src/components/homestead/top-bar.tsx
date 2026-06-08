@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { FileControls } from "./file-controls";
+import { ThemeToggle } from "./theme-toggle";
 
 // Slim top bar — wordmark + module nav + file controls. The nav is the future
 // module strip (ADR-0005); kept to a static list for now (ADR-0002).
@@ -45,7 +46,8 @@ export function TopBar() {
           );
         })}
       </nav>
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-2">
+        <ThemeToggle />
         <FileControls />
       </div>
     </header>

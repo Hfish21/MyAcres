@@ -3,6 +3,7 @@ import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import { ServiceWorkerRegister } from "@/components/sw-register";
 import { HomesteadProvider } from "@/components/homestead-provider";
 import { AppShell } from "@/components/homestead/app-shell";
+import { THEME_INIT_SCRIPT } from "@/components/homestead/theme-toggle";
 import "./globals.css";
 
 // Paper Desktop typography (ADR-0007 §3): the app reads in a humanist sans;
@@ -35,7 +36,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#9C4A2E",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#9C4A2E" },
+    { media: "(prefers-color-scheme: dark)", color: "#211913" },
+  ],
 };
 
 export default function RootLayout({
@@ -44,7 +48,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* No-flash theme init: set .dark before paint (ADR-0007 §2.4). */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body
         className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} font-sans antialiased bg-canvas text-ink`}
       >
