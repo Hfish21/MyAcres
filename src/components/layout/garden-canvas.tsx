@@ -30,6 +30,26 @@ function dist(a: Point, b: Point): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
+// Shrink a polygon toward its centroid so packed dots keep a margin off the
+// border (purely cosmetic — gives each bed some breathing room).
+function insetPolygon(poly: Polygon, ratio: number): Polygon {
+  const c = centroid(poly);
+  return {
+    points: poly.points.map((p) => ({
+      x: c.x + (p.x - c.x) * ratio,
+      y: c.y + (p.y - c.y) * ratio,
+    })),
+  };
+}
+
+// A "nice" round length for the scale bar, ~1/6 of the visible width.
+function niceScale(target: number): number {
+  const steps = [1, 2, 5, 10, 20, 25, 50, 100, 200];
+  let best = 1;
+  for (const s of steps) if (s <= target) best = s;
+  return best;
+}
+
 interface GardenCanvasProps {
   spaces: Space[];
   plantings: Planting[];
@@ -64,32 +84,33 @@ export function GardenCanvas({
   const svgRef = React.useRef<SVGSVGElement>(null);
   const cropById = React.useMemo(() => new Map(crops.map((c) => [c.id, c])), [crops]);
   const [hover, setHover] = React.useState<Point | null>(null);
+  const [hoverId, setHoverId] = React.useState<string | null>(null);
   const [drag, setDrag] = React.useState<{ id: string; start: Point; orig: Polygon } | null>(null);
   const [dragPreview, setDragPreview] = React.useState<{ id: string; polygon: Polygon } | null>(
     null,
   );
 
-  // viewBox in feet: include the origin + content + a generous min area & margin.
+  // viewBox in feet: frame the actual content with a small margin (extra room up
+  // top for the bed nameplates). Falls back to a sensible empty frame.
   const view = React.useMemo(() => {
     const pts = [...spaces.flatMap((s) => s.shape.points), ...draftPoints];
-    const m = 4;
-    let minX = 0,
-      minY = 0,
-      maxX = 36,
-      maxY = 24;
-    if (pts.length) {
-      const bb = boundingBox({ points: pts });
-      minX = Math.min(minX, bb.minX);
-      minY = Math.min(minY, bb.minY);
-      maxX = Math.max(maxX, bb.maxX);
-      maxY = Math.max(maxY, bb.maxY);
+    if (pts.length < 2) {
+      return { minX: 0, minY: 0, w: 32, h: 20 };
     }
-    minX -= m;
-    minY -= m;
-    maxX += m;
-    maxY += m;
-    return { minX, minY, w: maxX - minX, h: maxY - minY };
+    const bb = boundingBox({ points: pts });
+    const mx = 2.5; // side / bottom margin
+    const mt = 3.5; // top margin — leaves room for nameplates above each bed
+    const minX = bb.minX - mx;
+    const minY = bb.minY - mt;
+    const w = bb.maxX - bb.minX + mx * 2;
+    const h = bb.maxY - bb.minY + mt + mx;
+    return { minX, minY, w, h };
   }, [spaces, draftPoints]);
+
+  // Label / scale sizing scales gently with the framed area so it reads at any
+  // zoom, but stays compact so nameplates don't overpower small beds.
+  const labelSize = Math.min(0.74, Math.max(0.42, view.w / 72));
+  const scaleLen = niceScale(view.w / 6);
 
   function toFeet(e: React.PointerEvent): Point | null {
     const svg = svgRef.current;
@@ -160,8 +181,9 @@ export function GardenCanvas({
     const avgSpacing =
       items.reduce((s, x) => s + plantSpacingFt(x.crop), 0) / items.length;
     const total = items.reduce((s, x) => s + x.p.quantity, 0);
-    const grid = packPositions(shapeOf(space), avgSpacing, total);
-    const r = Math.min(0.38, Math.max(0.14, avgSpacing * 0.3));
+    // Pack into a slightly inset bed so dots don't crowd the border.
+    const grid = packPositions(insetPolygon(shapeOf(space), 0.86), avgSpacing, total);
+    const r = Math.min(0.34, Math.max(0.13, avgSpacing * 0.28));
     const dots: Array<{ pt: Point; color: string; r: number }> = [];
     let i = 0;
     for (const { p, crop } of items) {
@@ -183,7 +205,7 @@ export function GardenCanvas({
         ref={svgRef}
         viewBox={`${view.minX} ${view.minY} ${view.w} ${view.h}`}
         className={cn(
-          "block h-auto w-full touch-none select-none",
+          "block h-auto max-h-[72vh] w-full touch-none select-none",
           mode === "draw" && editable && "cursor-crosshair",
         )}
         onPointerDown={handleBackgroundDown}
@@ -193,10 +215,10 @@ export function GardenCanvas({
       >
         <defs>
           <pattern id="dotgrid" width="1" height="1" patternUnits="userSpaceOnUse">
-            <circle cx="0" cy="0" r="0.05" className="fill-line" opacity="0.6" />
+            <circle cx="0" cy="0" r="0.045" className="fill-line" opacity="0.55" />
           </pattern>
           <pattern id="dotgrid5" width="5" height="5" patternUnits="userSpaceOnUse">
-            <circle cx="0" cy="0" r="0.1" className="fill-ink-3" opacity="0.5" />
+            <circle cx="0" cy="0" r="0.1" className="fill-ink-3" opacity="0.45" />
           </pattern>
         </defs>
 
@@ -205,47 +227,92 @@ export function GardenCanvas({
 
         {spaces.map((space) => {
           const poly = shapeOf(space);
-          const c = centroid(poly);
+          const bb = boundingBox(poly);
           const selected = space.id === selectedId;
+          const hovered = space.id === hoverId && !selected;
           const dots = dotsFor(space);
+
+          // Nameplate floats just above the bed's top-left corner: name over a
+          // muted area line, stacked so the pill stays narrow (won't run into a
+          // neighbouring bed).
+          const name = space.name;
+          const areaLabel = `${Math.round(polygonArea(poly))} sq ft`;
+          const areaSize = labelSize * 0.8;
+          const pad = labelSize * 0.45;
+          const lineGap = labelSize * 0.35;
+          const nameW = name.length * labelSize * 0.56;
+          const areaW = areaLabel.length * areaSize * 0.6; // mono is a touch wider
+          const pillW = Math.max(nameW, areaW) + pad * 2;
+          const pillH = labelSize + areaSize + lineGap + pad * 2;
+          const pillY = bb.minY - pillH - 0.2;
+          const nameY = pillY + pad + labelSize / 2;
+          const areaY = nameY + labelSize / 2 + lineGap + areaSize / 2;
+
           return (
             <g key={space.id} style={{ pointerEvents: mode === "draw" ? "none" : "auto" }}>
               <polygon
                 points={pointsStr(poly)}
                 className={cn(
-                  "fill-panel",
-                  selected ? "stroke-rust" : "stroke-line",
+                  selected ? "fill-rust/8 stroke-rust" : "fill-panel stroke-line",
+                  hovered && "fill-inset stroke-ink-3",
                   editable && mode === "select" && "cursor-move",
                 )}
-                fillOpacity={0.85}
-                strokeWidth={selected ? 2 : 1.5}
+                fillOpacity={selected ? 1 : 0.9}
+                strokeWidth={selected ? 2 : 1.25}
                 vectorEffect="non-scaling-stroke"
                 onPointerDown={(e) => handleSpaceDown(e, space)}
+                onPointerEnter={() => editable && mode === "select" && setHoverId(space.id)}
+                onPointerLeave={() => setHoverId((id) => (id === space.id ? null : id))}
               />
               {dots.map((d, i) => (
-                <circle key={i} cx={d.pt.x} cy={d.pt.y} r={d.r} fill={d.color} opacity={0.9} />
+                <circle
+                  key={i}
+                  cx={d.pt.x}
+                  cy={d.pt.y}
+                  r={d.r}
+                  fill={d.color}
+                  opacity={0.92}
+                  className="stroke-canvas"
+                  strokeWidth={0.045}
+                />
               ))}
-              <text
-                x={c.x}
-                y={c.y}
-                textAnchor="middle"
-                fontSize={0.95}
-                fontWeight={600}
-                pointerEvents="none"
-                className="fill-ink"
-              >
-                {space.name}
-              </text>
-              <text
-                x={c.x}
-                y={c.y + 1.1}
-                textAnchor="middle"
-                fontSize={0.7}
-                pointerEvents="none"
-                className="fill-ink-3"
-              >
-                {Math.round(polygonArea(poly))} sq ft
-              </text>
+
+              {/* Nameplate (name pill + area), kept clear of the plantings */}
+              <g pointerEvents="none">
+                <rect
+                  x={bb.minX}
+                  y={pillY}
+                  width={pillW}
+                  height={pillH}
+                  rx={0.35}
+                  className={cn(
+                    "fill-panel",
+                    selected ? "stroke-rust" : "stroke-line",
+                  )}
+                  fillOpacity={0.96}
+                  strokeWidth={selected ? 1.5 : 1}
+                  vectorEffect="non-scaling-stroke"
+                />
+                <text
+                  x={bb.minX + pad}
+                  y={nameY}
+                  dominantBaseline="central"
+                  fontSize={labelSize}
+                  fontWeight={600}
+                  className="fill-ink"
+                >
+                  {name}
+                </text>
+                <text
+                  x={bb.minX + pad}
+                  y={areaY}
+                  dominantBaseline="central"
+                  fontSize={areaSize}
+                  className="fill-ink-3 font-mono"
+                >
+                  {areaLabel}
+                </text>
+              </g>
             </g>
           );
         })}
@@ -274,6 +341,34 @@ export function GardenCanvas({
             ))}
           </g>
         ) : null}
+
+        {/* Scale bar — anchored bottom-left, communicates the grid is in feet */}
+        <g
+          pointerEvents="none"
+          transform={`translate(${view.minX + 1.2}, ${view.minY + view.h - 1.2})`}
+          className="stroke-ink-3"
+        >
+          <line x1={0} y1={0} x2={scaleLen} y2={0} strokeWidth={1} vectorEffect="non-scaling-stroke" />
+          <line x1={0} y1={-0.3} x2={0} y2={0.3} strokeWidth={1} vectorEffect="non-scaling-stroke" />
+          <line
+            x1={scaleLen}
+            y1={-0.3}
+            x2={scaleLen}
+            y2={0.3}
+            strokeWidth={1}
+            vectorEffect="non-scaling-stroke"
+          />
+          <text
+            x={scaleLen / 2}
+            y={-0.55}
+            textAnchor="middle"
+            fontSize={labelSize * 0.8}
+            className="fill-ink-3 font-mono"
+            strokeWidth={0}
+          >
+            {scaleLen} ft
+          </text>
+        </g>
       </svg>
     </div>
   );
