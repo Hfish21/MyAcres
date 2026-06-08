@@ -4,9 +4,20 @@ A portable, offline-first **homestead management** app. A modular tool for runni
 homestead — starting with the **garden** — that you can grow over time, one feature at a
 time.
 
-> Status: **Phase 0 — scaffold + design system.** The app is scaffolded as a static PWA with
-> the "Paper Desktop" design language and a showcase screen. Storage, the core shell, and the
-> Garden module come next. Run `pnpm dev` to see it.
+> Status: **Garden module working.** Define crops, draw your growing spaces, record plantings,
+> and visualize your garden plan over time — five views (**Plan · Layout · Crops · Spaces ·
+> Plantings**), fully offline, with your data in a portable `.homestead` file. Run `pnpm dev`
+> to try it.
+
+## Features
+
+- **Plan** (home) — a visual dashboard over time: a garden timeline (Gantt), an "Up Next"
+  milestone list, a harvest-coverage strip (where the supply gaps are), and summary stats.
+- **Layout** — an interactive canvas to draw your garden on a dot grid; place crops as
+  colored density dots, and a date scrubber shows beds fill and empty across the season.
+- **Crops** — your editable crop library (timing, spacing, family, requirements, yield).
+- **Spaces** — your growing areas (beds, rows, containers).
+- **Plantings** — a crop in a space on a date, with its projected schedule and capacity.
 
 ## What it is
 

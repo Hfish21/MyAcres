@@ -18,15 +18,37 @@ Read these before doing substantive work — they hold the *why*:
   language** ("Paper Desktop"). All UI work follows this: flat windows on warm paper, sans-first
   with mono as data/chrome texture, the token set in §8, the `Window` component as the core
   primitive. ([ADR-0007](docs/decisions/0007-design-language-paper-desktop.md))
+- **[docs/features/](docs/features/)** — per-feature specs: what each view does and its data.
 - **[docs/decisions/](docs/decisions/)** — ADRs. **These are binding.** Don't contradict an
   accepted ADR without proposing a new ADR that supersedes it.
 
 ## Status
 
-**Phase 0 (scaffold + design system) — in progress.** The app is scaffolded at the repo
-root (no `frontend/` subdir — there's no backend). The static "Paper Desktop" showcase, the
-`Window` primitive, reskinned base components, fonts/tokens, and PWA setup are in place. No
-storage, data, or modules yet — those are Phase 1+.
+**The Garden module is built and working** — the full loop: define crops, draw/manage growing
+spaces, record plantings, and visualize the plan over time. Storage, the shell, and five views
+are all in place. Per-feature detail lives in [`docs/features/`](docs/features/).
+
+### Views (routes)
+- `/` — **Plan** (home): a visual, derived dashboard — garden timeline (Gantt), "Up Next"
+  milestones, a harvest-coverage strip, and summary stats. Read-only.
+- `/layout` — **Layout**: an interactive SVG dot-grid canvas. Draw/arrange/copy growing spaces,
+  see plantings as crop-colored density dots, and a **date scrubber** that fills/empties beds
+  across the season.
+- `/crops` — **Crops**: the crop library (CRUD) — produce-type profiles (timing, spacing, …).
+- `/spaces` — **Spaces**: growing-area list (CRUD).
+- `/plantings` — **Plantings**: a crop in a space on a date; shows the projected schedule +
+  capacity/fits.
+
+### Code map
+- `src/lib/homestead/` — the `.homestead` file: `constants`, `envelope` (Zod + parse/migrate),
+  `file-io` (File System Access + download fallback + IndexedDB autosave), `store`
+  (`HomesteadStore`, CRUD + cascade-delete, `getStore()` singleton).
+- `src/lib/garden/` — `schema` (Zod: Crop/Space/Planting, the single source of truth), `labels`,
+  `geometry` (area, capacity, polygon ops, packing), `schedule` (`projectedDates`), `insights`
+  (timeline window, lifecycle segments, harvest coverage, upcoming milestones), `colors`.
+- `src/components/homestead/` — provider, app-shell, top-bar (nav), file-controls.
+- `src/components/{ui,crops,spaces,plantings,plan,layout}/` — the `Window` primitive + reskinned
+  shadcn, and per-feature components.
 
 ## Commands
 

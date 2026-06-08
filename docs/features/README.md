@@ -16,10 +16,11 @@ capture *what* we're building and *how* it should behave.
 
 ## Index
 
-_No feature specs yet — the repo is in the pre-build (bones) stage. The first specs will
-likely be the core shell (storage, tasks, journal, dashboard) and the Garden module's
-crop library, beds, and plantings._
+| Feature | Module | Route | Status |
+|---------|--------|-------|--------|
+| [Crop Library](crop-library.md) | garden | `/crops` | Shipped |
+| [Spaces & Layout Editor](spaces-and-layout.md) | garden | `/spaces`, `/layout` | Shipped |
+| [Plantings & Schedule](plantings-and-schedule.md) | garden | `/plantings` | Shipped |
+| [Plan View](plan-view.md) | garden | `/` | Shipped |
 
-| Feature | Module | Status |
-|---------|--------|--------|
-| _(none yet)_ | | |
+_Deferred features (Tasks, journaling, succession/time-aware capacity) get specs when built._

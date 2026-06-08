@@ -1,139 +1,93 @@
 # Architecture Overview
 
-_Last updated: 2026-06-06 · Status: living document (pre-build)_
+_Last updated: 2026-06-08 · Status: as built (Garden module working)_
 
-This describes the intended high-level architecture. Details get pinned down in ADRs and
-feature specs as we build.
+How MyAcres is actually put together today, plus where the architecture is headed. Decisions
+are recorded in [ADRs](../decisions/); per-feature behavior in [feature specs](../features/).
 
 ## Mental model: shell + modules
 
+The guiding architecture ([ADR-0005](../decisions/0005-core-module-architecture.md)) is a
+**shell (core)** that owns cross-cutting concerns, hosting **modules** that own a domain. Today
+there is exactly one module — **Garden** — so the "module" is a lightweight **convention** (a
+data namespace + a `lib/` slice + components), **not** a plugin registry. We build the
+abstraction when a second module justifies it (rule-of-three, [ADR-0002](../decisions/0002-personal-first-platform-mindful.md)).
+
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                          SHELL (core)                        │
-│                                                              │
-│   Storage        Tasks &         Journal       Dashboard     │
-│  (.homestead)   Scheduling     (log + notes)  (today view)   │
-│       │             ▲               ▲              ▲          │
-│       │             │ generates     │ writes       │ pulls    │
-│  Module Registry ───┼───────────────┼──────────────┘          │
-│                     │               │                         │
-└─────────────────────┼───────────────┼─────────────────────────┘
-                      │               │
-        ┌─────────────┴───────────────┴─────────────┐
-        │            GARDEN module                   │
-        │  crop library · beds · plantings ·         │
-        │  harvest log · timeline · (its own views)  │
-        └────────────────────────────────────────────┘
-        (future: Livestock, Equipment, … — not built)
+Shell (core)            Garden module
+  storage (.homestead)    crops · spaces · plantings        ← data (under modules.garden)
+  provider + dataVersion  schema · geometry · schedule ·    ← lib/garden
+  app-shell + top-bar     insights · colors
+  file controls           Plan · Layout · Crops · Spaces ·  ← views (routes)
+                          Plantings
 ```
 
-The shell knows nothing about gardens. It knows the **module contract**. Modules own their
-data slice and their views; they lean on core services for the cross-cutting stuff.
+## What exists today
 
-## Core services
+### Shell (`src/components/homestead/`, `src/lib/homestead/`)
+- **Storage** — a single portable `.homestead` JSON file. `store.ts` (`HomesteadStore`) holds the
+  data in memory with subscriber/dirty tracking and CRUD (incl. cascade-delete, no orphans);
+  `file-io.ts` saves/opens via the File System Access API (download/`<input>` fallback) and
+  autosaves to IndexedDB; `envelope.ts` validates/parses with Zod. `getStore()` is a singleton.
+- **Provider** — `homestead-provider.tsx`: a React context exposing the store, `dirty`,
+  `loading`, `fileLoaded`, a `dataVersion` counter (re-render signal), and `open/save/new`.
+- **Chrome** — `app-shell.tsx` (load gate + error banner), `top-bar.tsx` (the **static nav**
+  list — the future module strip), `file-controls.tsx` (New/Open/Save + Saved/Unsaved chip).
 
-| Service | Responsibility | Notes |
-|---|---|---|
-| **Storage** | Load/save the portable `.homestead` file | Swappable adapter, file-first default ([ADR-0003](../decisions/0003-file-first-storage-no-database.md)) |
-| **Tasks & scheduling** | Surface, complete, and track tasks | Cross-cutting. Modules *generate* tasks; core owns them ([ADR-0005](../decisions/0005-core-module-architecture.md)) |
-| **Journal** | Free-text + structured log entries | Cross-cutting. Optional `source` backreference to a module |
-| **Dashboard** | "What needs attention today" across modules | **Pull** model — core asks each module for its items |
-| **Module registry** | Static list of installed modules | One module (Garden) for now |
+### Garden module (`src/lib/garden/`, `src/components/{crops,spaces,plantings,plan,layout}/`)
+- `schema.ts` — Zod schemas for **Crop**, **Space**, **Planting** (+ the garden module slice);
+  the single source of truth (TS types via `z.infer`).
+- `geometry.ts` — `polygonArea`, `capacity`, polygon ops (`pointInPolygon`, `packPositions`,
+  `translatePolygon`, …). `schedule.ts` — `projectedDates` (germination/transplant/harvest
+  ranges). `insights.ts` — timeline window, lifecycle segments, harvest coverage, upcoming
+  milestones, `plantingActiveOn`. `labels.ts`, `colors.ts` — display helpers.
+- Five views (see [CLAUDE.md](../../CLAUDE.md) for the route map): **Plan** (visual dashboard),
+  **Layout** (draw-your-garden canvas), **Crops**, **Spaces**, **Plantings**.
 
-## The module contract (intended)
+### Entities (the data model)
+- **Crop** — a reusable profile of a produce type (timing as `{min,max}` ranges, spacing,
+  family, requirements, yield). [ADR-0008]
+- **Space** — a growing area: a polygon (feet) + type/sun/notes; capacity = area ÷ spacing.
+- **Planting** — a crop in a space on a start date, with quantity, lifecycle `status`, and
+  `events[]` checkpoints. [ADR-0009]
+- **Derived, never stored:** `projectedDates`, `capacity`/fits, `lifecycleSegments` — these power
+  the Plan timeline, the Layout scrubber, and the capacity warnings.
 
-A module is a self-contained folder exporting a single descriptor. Sketch (subject to an ADR
-when we build it):
+## The `.homestead` file (as built — [ADR-0008](../decisions/0008-homestead-file-schema.md))
 
-```ts
-interface ModuleManifest {
-  id: string;            // "garden" — namespace key in the .homestead file
-  name: string;          // "Garden"
-  icon: ReactNode;
-  version: string;       // module schema version (semver)
-
-  // DATA
-  initState: () => ModuleState;                 // empty-state factory
-  migrate: (state: unknown, from: string) => ModuleState;
-  schema: ZodSchema;                            // validates its own slice
-
-  // VIEWS — routes the shell mounts under /{id}/*
-  routes: RouteDescriptor[];
-
-  // DASHBOARD — pull model
-  getDashboardItems: (state, ctx) => DashboardItem[];
-
-  // TASKS — derive tasks from module state, fed into the core scheduler
-  taskGenerators: TaskGenerator[];
-}
-```
-
-**Decoupling rules:**
-
-- Modules **never** import each other. Sharing goes through core.
-- A module gets its own data slice + a few core services. It cannot reach into another
-  module's slice.
-- Tasks and journal entries are **core types** with an optional `source: { module, refId }`
-  backreference.
-- The dashboard is **pull, not push** — modules return items; they don't know the dashboard
-  exists.
-
-**Anti-goals for v1:** no plugin loader, no dynamic install, no per-module settings
-framework, no inter-module event bus. Modules are statically imported into a registry array.
-See [ADR-0002](../decisions/0002-personal-first-platform-mindful.md).
-
-## The `.homestead` file (intended shape)
-
-Single JSON file; core data at the root, modules namespaced under `modules`. Two-level
-versioning so a module change never forces a core migration (and vice versa).
+A single JSON envelope; module data namespaced; two-level versioning.
 
 ```jsonc
 {
   "fileFormat": "homestead",
-  "schemaVersion": "1.0.0",          // CORE/envelope version
-  "meta": { "createdAt": "…", "updatedAt": "…", "appVersionLastWritten": "…" },
-  "profile": { /* owner-set preferences */ },
-  "core": {
-    "tasks": [ /* Task[] — cross-module */ ],
-    "journal": [ /* JournalEntry[] — cross-module */ ]
-  },
+  "schemaVersion": "1.0.0",            // core/envelope version
+  "meta": { "createdAt": "…", "updatedAt": "…", "appVersionLastWritten": "0.1.0" },
   "modules": {
-    "garden": { "moduleVersion": "1.0.0", "data": { /* … */ } }
+    "garden": {
+      "moduleVersion": "1.1.0",        // bumped when adding spaces/plantings (additive)
+      "data": { "crops": [ … ], "spaces": [ … ], "plantings": [ … ] }
+    }
   }
 }
 ```
 
-**Migration discipline (the thing that keeps modules easy to add):**
+- **Two-level versioning** — core `schemaVersion` is independent of each module's
+  `moduleVersion`; additive changes default missing arrays to `[]` (backward-compatible).
+- **Migration discipline** — Zod-validate on load and **fail loud** (never partially load);
+  `.passthrough()` **preserves unknown modules**; forward-only migration is a structured stub
+  (identity at v1). UUID string ids.
+- A **core block** for cross-cutting `tasks`/`journal` is *reserved by the design* but **not yet
+  present** — it slots in as a sibling of `modules` when those features are built.
 
-- Per-namespace, forward-only, sequential migrations (`vN → vN+1`, pure functions).
-- **Preserve unknown modules untouched on save** — opening a file in a build that lacks a
-  module must not drop that module's data.
-- **Back up before migrating**; validate on load and fail loud rather than silently mutate.
+## Tech stack (as built — [ADR-0006](../decisions/0006-tech-stack-pwa.md))
+Next.js 16 (App Router, static export) + React 19 + TypeScript + Tailwind v4 + shadcn/ui
+(`base-nova`/Base UI), Zod, pnpm. File System Access API + IndexedDB. Static, **no backend**.
+Paper Desktop design language ([ADR-0007](../decisions/0007-design-language-paper-desktop.md)).
 
-The exact schema will be locked in its own ADR before the storage layer is built.
-
-## Tech stack (intended)
-
-- Next.js (static export) + TypeScript + Tailwind + shadcn/ui
-- Zod for runtime validation of the file and each module slice
-- File System Access API with download/upload fallback
-- Static hosting (GitHub Pages), no backend
-
-## Frontend structure (sketch, for when we scaffold)
-
-```
-src/
-  core/
-    storage/        # adapters + the .homestead schema
-    tasks/          # scheduler service + types
-    journal/        # journal service + types
-    dashboard/      # aggregation
-    registry.ts     # the static module list
-  modules/
-    garden/
-      manifest.ts   # ModuleManifest
-      data/         # schema, migrations, types
-      views/        # routes/components
-  shell/            # nav, layout, file open/save UI
-  app/              # Next.js routes
-```
+## Deliberately deferred (build when justified)
+- The **module registry / manifest contract** — today modules are a convention, not a framework
+  (ADR-0002). The static nav stands in for a registry.
+- **Core Tasks & Journal services** and a cross-module **dashboard "pull" abstraction** — the
+  Plan view currently derives its insights directly from garden data. Tasks/journal arrive as
+  their own pass; the schedule/checkpoints/tasks split is reconciled in [ADR-0009](../decisions/0009-space-planting-model.md).
+- **Time-aware/succession capacity**, dark mode, and the `myacres.app` go-live.

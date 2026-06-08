@@ -1,6 +1,6 @@
 # MyAcres — Vision & Brief
 
-_Last updated: 2026-06-06 · Status: living document_
+_Last updated: 2026-06-08 · Status: living document (Garden module built)_
 
 ## One-liner
 
@@ -62,15 +62,18 @@ Cross-cutting services every part of the homestead needs:
 4. **Personal-first, platform-mindful.** Built for us, cheaply — but kept clean enough to
    become open-source or SaaS later. ([ADR-0002](decisions/0002-personal-first-platform-mindful.md))
 
-## Scope — v1
+## Scope — status
 
-**In:** the minimal shell (storage, tasks, journal, dashboard, module registry) **and** the
-Garden module as its first tenant — proving the seam without over-abstracting.
+**Built (the Garden module works):** the shell + portable `.homestead` storage; the **Crop
+library**, **Spaces** (drawable on a visual layout canvas), and **Plantings** (with projected
+schedules + capacity/fits); and the **Plan** view (garden timeline, up-next milestones, harvest
+coverage). See [`features/`](features/).
 
-**Out (deferred):** yield *prediction* / forecasting math (v1 is a simple timeline, not a
-predictive model); zone-aware planting intelligence; weather/sensor integration; push
-notifications; multi-user/sync/cloud; livestock & equipment modules (the *seam* exists; the
-modules do not).
+**Deferred:** a real **Tasks** system and **journaling**; **time-aware/succession** capacity
+("what's in a bed *when*"); yield *prediction* / forecasting math (we show a timeline, not a
+predictive model); zone-aware planting intelligence; weather/sensor integration; multi-user /
+sync / cloud; the module *registry* abstraction and other modules (livestock, equipment); dark
+mode; and connecting `myacres.app`.
 
 ## Success criteria
 
