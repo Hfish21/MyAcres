@@ -65,6 +65,20 @@ export function lifecycleSegments(planting: Planting, crop: Crop): LifecycleSegm
   ];
 }
 
+/** The full occupied span (sow → end of harvest) of a planting, or null. */
+export function plantingSpan(planting: Planting, crop: Crop): { start: Date; end: Date } | null {
+  const segs = lifecycleSegments(planting, crop);
+  if (segs.length === 0) return null;
+  return { start: segs[0].start, end: segs[segs.length - 1].end };
+}
+
+/** Is the planting occupying its space on the given date? (powers the scrubber.) */
+export function plantingActiveOn(planting: Planting, crop: Crop, date: Date): boolean {
+  const span = plantingSpan(planting, crop);
+  if (!span) return false;
+  return date >= span.start && date <= span.end;
+}
+
 // --- timeline window ------------------------------------------------------
 
 export interface TimelineWindow {
