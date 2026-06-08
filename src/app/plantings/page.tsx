@@ -83,7 +83,7 @@ export default function PlantingsPage() {
           {!canPlant ? (
             <div className="rounded-md border border-dashed border-line py-12 text-center text-sm text-ink-3">
               Add at least one{" "}
-              <Link href="/" className="text-rust underline underline-offset-2">
+              <Link href="/crops" className="text-rust underline underline-offset-2">
                 crop
               </Link>{" "}
               and one{" "}

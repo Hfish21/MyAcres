@@ -1,115 +1,57 @@
 "use client";
 
-import * as React from "react";
-import { Plus, Sprout } from "lucide-react";
+import Link from "next/link";
+import { CalendarDays, Clock, Sprout } from "lucide-react";
 
 import { useHomestead } from "@/components/homestead-provider";
 import { Window } from "@/components/ui/window";
-import { Button } from "@/components/ui/button";
-import { CropTable } from "@/components/crops/crop-table";
-import { CropFilters, type FamilyFilter } from "@/components/crops/crop-filters";
-import { CropDialog } from "@/components/crops/crop-dialog";
-import { CropDeleteDialog } from "@/components/crops/crop-delete-dialog";
-import type { Crop, CropInput } from "@/lib/garden/schema";
+import { PlanSummary } from "@/components/plan/plan-summary";
+import { UpNext } from "@/components/plan/up-next";
+import { HarvestCoverage } from "@/components/plan/harvest-coverage";
+import { GardenTimeline } from "@/components/plan/garden-timeline";
 
-// The crop library dashboard — MyAcres' first feature, and the app's home.
+// The Plan view — the app's home. A visual, derived overview of the garden over
+// time: what's planted, when each thing happens, and where the supply gaps are.
+// Read-only (visualize, don't prescribe).
 
-function EmptyState({ onAdd }: { onAdd: () => void }) {
-  return (
-    <div className="flex flex-col items-center gap-3 rounded-md border border-dashed border-line py-12 text-center">
-      <p className="text-sm text-ink-3">No crops yet — add your first crop profile.</p>
-      <Button size="sm" onClick={onAdd}>
-        <Plus /> Add crop
-      </Button>
-    </div>
-  );
-}
+export default function PlanPage() {
+  const { store } = useHomestead();
+  const plantings = store.plantings;
+  const crops = store.crops;
+  const spaces = store.spaces;
 
-export default function HomePage() {
-  const { store, dataVersion } = useHomestead();
-  const allCrops = store.crops;
-
-  const [search, setSearch] = React.useState("");
-  const [family, setFamily] = React.useState<FamilyFilter>("all");
-  const [addOpen, setAddOpen] = React.useState(false);
-  const [editing, setEditing] = React.useState<Crop | null>(null);
-  const [deleteTarget, setDeleteTarget] = React.useState<Crop | null>(null);
-
-  // The store mutates its array in place (stable reference), so `dataVersion`
-  // is the signal that re-derives the filtered list after a change.
-  const filtered = React.useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return allCrops.filter((c) => {
-      const byFamily = family === "all" || c.family === family;
-      const bySearch =
-        q === "" ||
-        c.name.toLowerCase().includes(q) ||
-        (c.variety ?? "").toLowerCase().includes(q);
-      return byFamily && bySearch;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allCrops, dataVersion, search, family]);
-
-  function handleSave(input: CropInput) {
-    if (editing) store.updateCrop(editing.id, input);
-    else store.addCrop(input);
-    setEditing(null);
-  }
-
-  function handleDelete() {
-    if (deleteTarget) store.deleteCrop(deleteTarget.id);
-    setDeleteTarget(null);
+  if (plantings.length === 0) {
+    return (
+      <div className="mx-auto max-w-5xl p-4 sm:p-6">
+        <Window title="Garden — Plan" icon={<Sprout />}>
+          <div className="rounded-md border border-dashed border-line py-12 text-center text-sm text-ink-3">
+            Your garden plan appears here once you have plantings. Add{" "}
+            <Link href="/plantings" className="text-rust underline underline-offset-2">
+              a planting
+            </Link>{" "}
+            to begin.
+          </div>
+        </Window>
+      </div>
+    );
   }
 
   return (
-    <div className="mx-auto max-w-5xl p-4 sm:p-6">
-      <Window
-        title="Garden — Crops"
-        icon={<Sprout />}
-        count={allCrops.length}
-        bodyPadding="tight"
-        titleBarActions={
-          <Button size="sm" onClick={() => setAddOpen(true)}>
-            <Plus /> Add crop
-          </Button>
-        }
-      >
-        <div className="flex flex-col gap-4">
-          <CropFilters
-            search={search}
-            family={family}
-            onSearch={setSearch}
-            onFamily={setFamily}
-          />
-          {allCrops.length === 0 ? (
-            <EmptyState onAdd={() => setAddOpen(true)} />
-          ) : filtered.length === 0 ? (
-            <p className="py-8 text-center text-sm text-ink-3">
-              No crops match your filters.
-            </p>
-          ) : (
-            <CropTable crops={filtered} onEdit={setEditing} onDelete={setDeleteTarget} />
-          )}
-        </div>
+    <div className="mx-auto max-w-6xl space-y-4 p-4 sm:p-6">
+      <PlanSummary plantings={plantings} crops={crops} spaces={spaces} />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Window title="Garden — Up Next" icon={<Clock />}>
+          <UpNext plantings={plantings} crops={crops} spaces={spaces} />
+        </Window>
+        <Window title="Garden — Harvest Coverage" icon={<CalendarDays />}>
+          <HarvestCoverage plantings={plantings} crops={crops} />
+        </Window>
+      </div>
+
+      <Window title="Garden — Timeline" icon={<Sprout />} bodyPadding="tight">
+        <GardenTimeline plantings={plantings} crops={crops} spaces={spaces} />
       </Window>
-
-      <CropDialog open={addOpen} onOpenChange={setAddOpen} onSave={handleSave} />
-      <CropDialog
-        open={!!editing}
-        onOpenChange={(o) => {
-          if (!o) setEditing(null);
-        }}
-        crop={editing}
-        onSave={handleSave}
-      />
-      <CropDeleteDialog
-        crop={deleteTarget}
-        plantingCount={deleteTarget ? store.plantingsForCrop(deleteTarget.id).length : 0}
-        onOpenChange={(o) => {
-          if (!o) setDeleteTarget(null);
-        }}
-        onConfirm={handleDelete}
-      />
     </div>
   );
 }
