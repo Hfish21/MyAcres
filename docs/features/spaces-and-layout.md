@@ -30,7 +30,17 @@ An **SVG dot-grid canvas** (coordinates in feet). Desktop-editable, mobile read-
 - **Select mode:** click a space to **drag** it (snaps), **Copy**, **Delete** (cascade-confirm),
   or **Edit** details (name/type/sun/capacity/notes; area shown).
 - **Plant density:** each space fills with dots **colored per crop**, packed at the crop's spacing
-  up to capacity (`packPositions` + `pointInPolygon`) — organizational, not pixel-accurate.
+  up to capacity (`packPositions` + `pointInPolygon`) — organizational, not pixel-accurate. Dots
+  are packed into a slightly **inset** polygon so they keep a margin off the border, and carry a
+  thin canvas-colored ring so adjacent dots stay distinct.
+- **Bed nameplate:** each space's name + derived area sit in a compact two-line pill **floating
+  just above** the bed's top-left corner — kept clear of the plantings so the label is always
+  legible (it previously sat centered, on top of the dots). The pill picks up the rust border when
+  the bed is selected.
+- **Framing & scale:** the viewBox frames the actual content with a small margin (no forced
+  minimum / origin anchoring, so there's little dead space), capped at `72vh` tall. A small
+  **scale bar** anchored bottom-left states the grid's foot scale. Beds show a hover fill in
+  Select mode.
 - **Date scrubber:** an as-of slider; only plantings whose lifecycle spans that date are shown, so
   beds **fill, empty, and swap crops across the season** (`plantingActiveOn`).
 
