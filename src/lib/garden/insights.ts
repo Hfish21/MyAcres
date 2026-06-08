@@ -79,6 +79,22 @@ export function plantingActiveOn(planting: Planting, crop: Crop, date: Date): bo
   return date >= span.start && date <= span.end;
 }
 
+/**
+ * Which lifecycle stage a planting is in on a given date, or null if it isn't in
+ * the ground then. Powers the maturing plant glyphs on the layout canvas — drag
+ * the scrubber and plants grow establish → growing → harvest.
+ */
+export function stageOn(planting: Planting, crop: Crop, date: Date): LifecycleStage | null {
+  const segs = lifecycleSegments(planting, crop);
+  if (segs.length === 0) return null;
+  const t = date.getTime();
+  if (t < segs[0].start.getTime()) return null;
+  for (const seg of segs) {
+    if (t <= seg.end.getTime()) return seg.stage;
+  }
+  return null; // past the end of the harvest window
+}
+
 // --- timeline window ------------------------------------------------------
 
 export interface TimelineWindow {

@@ -11,7 +11,8 @@ import {
   snap,
   translatePolygon,
 } from "@/lib/garden/geometry";
-import { plantingActiveOn } from "@/lib/garden/insights";
+import { stageOn } from "@/lib/garden/insights";
+import type { LifecycleStage } from "@/lib/garden/insights";
 import { cn } from "@/lib/utils";
 
 export type CanvasMode = "select" | "draw";
@@ -52,6 +53,53 @@ function niceScale(target: number): number {
 
 function fmtFt(n: number): string {
   return Number.isInteger(n) ? `${n}` : n.toFixed(1);
+}
+
+// One leaf, normalized: base at the origin, tip straight up at (0,-1). The plant
+// glyph is a fan of three of these, rotated, so it reads as foliage (not a stem
+// with two "arms").
+const LEAF = "M0,0 C-0.3,-0.34 -0.26,-0.78 0,-1 C0.26,-0.78 0.3,-0.34 0,0 Z";
+
+// A single plant, drawn by lifecycle stage so the bed visibly matures as the
+// scrubber moves: establish = a small seed, growing = a leafy three-leaf sprout
+// (crop colour), harvest = the sprout with an amber "ready" fruit nestled in it.
+function PlantGlyph({
+  x,
+  y,
+  r,
+  color,
+  stage,
+}: {
+  x: number;
+  y: number;
+  r: number;
+  color: string;
+  stage: LifecycleStage;
+}) {
+  if (stage === "establish") {
+    return (
+      <circle
+        cx={x}
+        cy={y}
+        r={r * 0.5}
+        fill={color}
+        opacity={0.8}
+        className="stroke-canvas"
+        strokeWidth={0.04}
+      />
+    );
+  }
+  const s = r * (stage === "harvest" ? 1.12 : 0.92);
+  return (
+    <g transform={`translate(${x}, ${y + s * 0.45}) scale(${s})`} opacity={0.95}>
+      <path d={LEAF} fill={color} transform="rotate(-42)" opacity={0.9} />
+      <path d={LEAF} fill={color} transform="rotate(42)" opacity={0.9} />
+      <path d={LEAF} fill={color} />
+      {stage === "harvest" ? (
+        <circle cx={0} cy={-0.42} r={0.34} className="fill-amber stroke-canvas" strokeWidth={0.05} />
+      ) : null}
+    </g>
+  );
 }
 
 // A small measurement label drawn on the canvas (in feet units). `area` is the
@@ -221,29 +269,33 @@ export function GardenCanvas({
     return dragPreview?.id === space.id ? dragPreview.polygon : space.shape;
   }
 
-  function dotsFor(space: Space): Array<{ pt: Point; color: string; r: number }> {
+  function plantsFor(
+    space: Space,
+  ): Array<{ pt: Point; color: string; r: number; stage: LifecycleStage }> {
     const items = plantings
       .filter((p) => p.spaceId === space.id)
-      .map((p) => ({ p, crop: cropById.get(p.cropId) }))
-      .filter((x): x is { p: Planting; crop: Crop } => !!x.crop)
-      .filter((x) => plantingActiveOn(x.p, x.crop, asOfDate));
+      .map((p) => ({ p, crop: cropById.get(p.cropId), stage: undefined as LifecycleStage | null | undefined }))
+      .filter((x): x is { p: Planting; crop: Crop; stage: undefined } => !!x.crop)
+      .map((x) => ({ ...x, stage: stageOn(x.p, x.crop, asOfDate) }))
+      .filter((x): x is { p: Planting; crop: Crop; stage: LifecycleStage } => x.stage !== null);
     if (items.length === 0) return [];
     const avgSpacing =
       items.reduce((s, x) => s + plantSpacingFt(x.crop), 0) / items.length;
     const total = items.reduce((s, x) => s + x.p.quantity, 0);
-    // Pack into a slightly inset bed so dots don't crowd the border.
+    // Pack into a slightly inset bed so plants don't crowd the border.
     const grid = packPositions(insetPolygon(shapeOf(space), 0.86), avgSpacing, total);
-    const r = Math.min(0.34, Math.max(0.13, avgSpacing * 0.28));
-    const dots: Array<{ pt: Point; color: string; r: number }> = [];
+    const r = Math.min(0.4, Math.max(0.16, avgSpacing * 0.32));
+    const out: Array<{ pt: Point; color: string; r: number; stage: LifecycleStage }> = [];
     let i = 0;
-    for (const { p, crop } of items) {
+    for (const { p, crop, stage } of items) {
       const n = Math.min(p.quantity, grid.length - i);
+      const color = cropColors.get(crop.id) ?? "#5A6B3B";
       for (let k = 0; k < n; k++) {
-        dots.push({ pt: grid[i++], color: cropColors.get(crop.id) ?? "#5A6B3B", r });
+        out.push({ pt: grid[i++], color, r, stage });
       }
       if (i >= grid.length) break;
     }
-    return dots;
+    return out;
   }
 
   const draftWithHover =
@@ -280,7 +332,7 @@ export function GardenCanvas({
           const bb = boundingBox(poly);
           const selected = space.id === selectedId;
           const hovered = space.id === hoverId && !selected;
-          const dots = dotsFor(space);
+          const plants = plantsFor(space);
 
           // Nameplate floats just above the bed's top-left corner: name over a
           // muted area line, stacked so the pill stays narrow (won't run into a
@@ -314,16 +366,14 @@ export function GardenCanvas({
                 onPointerEnter={() => editable && mode === "select" && setHoverId(space.id)}
                 onPointerLeave={() => setHoverId((id) => (id === space.id ? null : id))}
               />
-              {dots.map((d, i) => (
-                <circle
+              {plants.map((d, i) => (
+                <PlantGlyph
                   key={i}
-                  cx={d.pt.x}
-                  cy={d.pt.y}
+                  x={d.pt.x}
+                  y={d.pt.y}
                   r={d.r}
-                  fill={d.color}
-                  opacity={0.92}
-                  className="stroke-canvas"
-                  strokeWidth={0.045}
+                  color={d.color}
+                  stage={d.stage}
                 />
               ))}
 
