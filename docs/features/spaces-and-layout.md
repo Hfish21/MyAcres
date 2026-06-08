@@ -31,10 +31,13 @@ An **SVG dot-grid canvas** (coordinates in feet). Desktop-editable, mobile read-
   (`≈ 68 sq ft`, approximate until closed), so you can lay out a bed to size.
 - **Select mode:** click a space to **drag** it (snaps), **Copy**, **Delete** (cascade-confirm),
   or **Edit** details (name/type/sun/capacity/notes; area shown).
-- **Plant density:** each space fills with dots **colored per crop**, packed at the crop's spacing
-  up to capacity (`packPositions` + `pointInPolygon`) — organizational, not pixel-accurate. Dots
-  are packed into a slightly **inset** polygon so they keep a margin off the border, and carry a
-  thin canvas-colored ring so adjacent dots stay distinct.
+- **Plant density & maturity:** each space fills with **per-crop glyphs**, packed at the crop's
+  spacing up to capacity (`packPositions` + `pointInPolygon`) — organizational, not pixel-accurate,
+  packed into a slightly **inset** polygon to keep a margin off the border. Each glyph reflects the
+  planting's **lifecycle stage on the scrubbed date** (`stageOn`): *establish* = a small seed,
+  *growing* = a leafy crop-coloured three-leaf sprout, *harvest* = the sprout with an **amber
+  "ready" fruit** nestled in it. Drag the date scrubber and the bed visibly matures, then lights up
+  amber as crops come ready. Glyphs degrade gracefully to small marks at high density.
 - **Bed nameplate:** each space's name + derived area sit in a compact two-line pill **floating
   just above** the bed's top-left corner — kept clear of the plantings so the label is always
   legible (it previously sat centered, on top of the dots). The pill picks up the rust border when
