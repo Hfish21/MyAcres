@@ -28,6 +28,7 @@
   --ochre: #d9a93c; /* warning (fill; needs dark text) */
   --barn: #8b2e22; /* danger */
   --inkblue: #3e5a6b; /* info / today marker */
+  --ripe: #d8431f; /* vivid "ready to harvest" fruit (layout glyphs) */
 
   /* On-paper accent text variants that clear AA (spec §2.3) */
   --olive-ink: #4c5a32;
@@ -90,6 +91,7 @@
   --ochre: #e5c06a; /* warning */
   --barn: #e0695c; /* danger */
   --inkblue: #7ba0b5; /* info / today marker */
+  --ripe: #f4673f; /* vivid "ready to harvest" fruit — brighter for dark paper */
 
   /* On-paper accent text variants (legible on the dark panel) */
   --olive-ink: #a8bc7e;
@@ -117,6 +119,7 @@
   --color-ochre: var(--ochre);
   --color-barn: var(--barn);
   --color-inkblue: var(--inkblue);
+  --color-ripe: var(--ripe);
   --color-olive-ink: var(--olive-ink);
   --color-amber-ink: var(--amber-ink);
   --color-ochre-ink: var(--ochre-ink);
