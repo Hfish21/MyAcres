@@ -11,6 +11,7 @@ import { FileControls } from "./file-controls";
 
 const NAV = [
   { href: "/", label: "Plan" },
+  { href: "/layout", label: "Layout" },
   { href: "/crops", label: "Crops" },
   { href: "/spaces", label: "Spaces" },
   { href: "/plantings", label: "Plantings" },
