@@ -22,5 +22,6 @@ capture *what* we're building and *how* it should behave.
 | [Spaces & Layout Editor](spaces-and-layout.md) | garden | `/spaces`, `/layout` | Shipped |
 | [Plantings & Schedule](plantings-and-schedule.md) | garden | `/plantings` | Shipped |
 | [Plan View](plan-view.md) | garden | `/` | Shipped |
+| [Coffee Dark Mode](dark-mode.md) | core | (all) | Shipped |
 
 _Deferred features (Tasks, journaling, succession/time-aware capacity) get specs when built._
