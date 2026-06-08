@@ -26,7 +26,9 @@ length × width → a rectangle polygon), filters, and cascade-aware delete.
 ### `/layout` — the editor (`src/components/layout/`)
 An **SVG dot-grid canvas** (coordinates in feet). Desktop-editable, mobile read-only.
 - **Draw mode:** click to drop polygon corners (snap to the foot); close near the first corner (or
-  Finish) → creates a Space and opens its details popup.
+  Finish) → creates a Space and opens its details popup. **Live dimensions** render as you draw —
+  each edge shows its length (`9 ft`) and the running polygon area shows as a bold rust chip
+  (`≈ 68 sq ft`, approximate until closed), so you can lay out a bed to size.
 - **Select mode:** click a space to **drag** it (snaps), **Copy**, **Delete** (cascade-confirm),
   or **Edit** details (name/type/sun/capacity/notes; area shown).
 - **Plant density:** each space fills with dots **colored per crop**, packed at the crop's spacing

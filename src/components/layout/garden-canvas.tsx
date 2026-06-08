@@ -50,6 +50,56 @@ function niceScale(target: number): number {
   return best;
 }
 
+function fmtFt(n: number): string {
+  return Number.isInteger(n) ? `${n}` : n.toFixed(1);
+}
+
+// A small measurement label drawn on the canvas (in feet units). `area` is the
+// headline running total (solid rust); `edge` labels are quieter (panel + rust).
+function MeasureChip({
+  x,
+  y,
+  text,
+  size,
+  variant,
+}: {
+  x: number;
+  y: number;
+  text: string;
+  size: number;
+  variant: "edge" | "area";
+}) {
+  const pad = size * 0.45;
+  const w = text.length * size * 0.62 + pad * 2;
+  const h = size + pad * 1.3;
+  return (
+    <g transform={`translate(${x}, ${y})`}>
+      <rect
+        x={-w / 2}
+        y={-h / 2}
+        width={w}
+        height={h}
+        rx={0.25}
+        className={variant === "area" ? "fill-rust stroke-rust" : "fill-panel stroke-rust"}
+        fillOpacity={variant === "area" ? 0.95 : 0.96}
+        strokeWidth={1}
+        vectorEffect="non-scaling-stroke"
+      />
+      <text
+        x={0}
+        y={0}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize={size}
+        className={cn("font-mono", variant === "area" ? "fill-canvas" : "fill-rust")}
+        fontWeight={variant === "area" ? 600 : 400}
+      >
+        {text}
+      </text>
+    </g>
+  );
+}
+
 interface GardenCanvasProps {
   spaces: Space[];
   plantings: Planting[];
@@ -339,6 +389,43 @@ export function GardenCanvas({
                 className={i === 0 ? "fill-rust" : "fill-rust/60"}
               />
             ))}
+
+            {/* live dimensions: each edge's length + the running area */}
+            {(() => {
+              const pts = draftWithHover;
+              const mSize = Math.max(0.5, labelSize * 0.82);
+              const chips: React.ReactNode[] = [];
+              for (let i = 0; i < pts.length - 1; i++) {
+                const a = pts[i];
+                const b = pts[i + 1];
+                const len = dist(a, b);
+                if (len < 0.6) continue;
+                chips.push(
+                  <MeasureChip
+                    key={`edge-${i}`}
+                    x={(a.x + b.x) / 2}
+                    y={(a.y + b.y) / 2}
+                    text={`${fmtFt(len)} ft`}
+                    size={mSize}
+                    variant="edge"
+                  />,
+                );
+              }
+              if (pts.length >= 3) {
+                const c = centroid({ points: pts });
+                chips.push(
+                  <MeasureChip
+                    key="area"
+                    x={c.x}
+                    y={c.y}
+                    text={`≈ ${Math.round(polygonArea({ points: pts }))} sq ft`}
+                    size={mSize}
+                    variant="area"
+                  />,
+                );
+              }
+              return chips;
+            })()}
           </g>
         ) : null}
 
