@@ -284,7 +284,7 @@ export function GardenCanvas({
     const total = items.reduce((s, x) => s + x.p.quantity, 0);
     // Pack into a slightly inset bed so plants don't crowd the border.
     const grid = packPositions(insetPolygon(shapeOf(space), 0.86), avgSpacing, total);
-    const r = Math.min(0.4, Math.max(0.16, avgSpacing * 0.32));
+    const r = Math.min(0.46, Math.max(0.18, avgSpacing * 0.37)); // ~15% larger glyphs
     const out: Array<{ pt: Point; color: string; r: number; stage: LifecycleStage }> = [];
     let i = 0;
     for (const { p, crop, stage } of items) {
