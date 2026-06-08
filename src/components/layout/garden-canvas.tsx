@@ -96,7 +96,7 @@ function PlantGlyph({
       <path d={LEAF} fill={color} transform="rotate(42)" opacity={0.9} />
       <path d={LEAF} fill={color} />
       {stage === "harvest" ? (
-        <circle cx={0} cy={-0.42} r={0.34} className="fill-amber stroke-canvas" strokeWidth={0.05} />
+        <circle cx={0} cy={-0.46} r={0.46} className="fill-ripe stroke-canvas" strokeWidth={0.09} />
       ) : null}
     </g>
   );
