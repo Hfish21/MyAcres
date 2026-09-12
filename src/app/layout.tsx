@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import { ServiceWorkerRegister } from "@/components/sw-register";
-import { HomesteadProvider } from "@/components/homestead-provider";
-import { AppShell } from "@/components/homestead/app-shell";
 import { THEME_INIT_SCRIPT } from "@/components/homestead/theme-toggle";
 import "./globals.css";
 
@@ -57,9 +55,7 @@ export default function RootLayout({
         className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} font-sans antialiased bg-canvas text-ink`}
       >
         <ServiceWorkerRegister />
-        <HomesteadProvider>
-          <AppShell>{children}</AppShell>
-        </HomesteadProvider>
+        {children}
       </body>
     </html>
   );

@@ -29,7 +29,10 @@ spaces, record plantings, and visualize the plan over time. Storage, the shell, 
 are all in place. Per-feature detail lives in [`docs/features/`](docs/features/).
 
 ### Views (routes)
-- `/` — **Plan** (home): a visual, derived dashboard — garden timeline (Gantt), "Up Next"
+- `/` — **Landing**: a chrome-free marketing front door (no app shell, no homestead store).
+  Explains what MyAcres is, how the file workflow works, and the feature set; CTAs into `/plan`.
+  Everything below lives under the `(app)` route group (shell + provider). ([ADR-0010](docs/decisions/0010-landing-page-and-route-groups.md))
+- `/plan` — **Plan** (app home): a visual, derived dashboard — garden timeline (Gantt), "Up Next"
   milestones, a harvest-coverage strip, and summary stats. Read-only.
 - `/layout` — **Layout**: an interactive SVG dot-grid canvas. Draw/arrange/copy growing spaces,
   see plantings as crop-colored density dots, and a **date scrubber** that fills/empties beds
