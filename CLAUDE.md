@@ -61,9 +61,13 @@ pnpm lint           # eslint
 pnpm icons          # regenerate PWA icons from public/logo.svg (sharp)
 ```
 
-Deploy: pushing/merging to `main` runs `.github/workflows/deploy-pages.yml` (build → GitHub
-Pages). The `myacres.app` custom domain (CNAME committed) is **not connected yet** — go-live
-is deferred until there's something real.
+Deploy (same model as BudgetOnTarget): the repo is **public**, GitHub Pages serves from the
+**GitHub Actions** source. Pushing/merging to `main` runs `.github/workflows/deploy-pages.yml`
+(build → GitHub Pages) and the site goes live at **https://myacres.app**. PRs into `main` run
+`.github/workflows/ci.yml` (lint + `next build` as the strict type check). The `myacres.app`
+custom domain is connected — apex `A` records point at GitHub Pages IPs and `www` CNAMEs to
+`hfish21.github.io`; the domain is set in Pages settings (not a committed CNAME file), matching
+BudgetOnTarget. `.app` is HTTPS-only, so Pages enforces HTTPS once the cert provisions.
 
 ## Core principles (binding — see ADRs)
 
