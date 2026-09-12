@@ -11,7 +11,7 @@ import { ThemeToggle } from "./theme-toggle";
 // module strip (ADR-0005); kept to a static list for now (ADR-0002).
 
 const NAV = [
-  { href: "/", label: "Plan" },
+  { href: "/plan", label: "Plan" },
   { href: "/layout", label: "Layout" },
   { href: "/crops", label: "Crops" },
   { href: "/spaces", label: "Spaces" },
@@ -23,13 +23,16 @@ export function TopBar() {
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-4 border-b border-line bg-titlebar px-4">
-      <span className="font-mono text-sm font-semibold tracking-wide text-ink uppercase">
+      <Link
+        href="/plan"
+        className="font-mono text-sm font-semibold tracking-wide text-ink uppercase transition-colors hover:text-rust"
+      >
         MyAcres
-      </span>
+      </Link>
       <nav className="flex items-center gap-1">
         {NAV.map((item) => {
           const active =
-            item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+            pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.href}
