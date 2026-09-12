@@ -21,6 +21,10 @@ next-env.d.ts
 *.homestead
 *.homestead.json
 
+# Personal garden-plan library — ignore everything in it except the README
+/garden-plans/*
+!/garden-plans/README.md
+
 # Logs
 *.log
 npm-debug.log*

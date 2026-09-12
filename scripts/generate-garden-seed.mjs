@@ -6,7 +6,7 @@
 // pages for luffa (HS1285), long bean (HS1268), and herbs.
 //
 // This is a data helper, not app code. Run:  node scripts/generate-garden-seed.mjs
-// Output (git-ignored): myacres-garden.homestead  — open it via the app's file controls.
+// Output (git-ignored): garden-plans/myacres-garden.homestead — open it via the app's file controls.
 //
 // Timing semantics (mirrors src/lib/garden/schedule.ts):
 //   - transplant crops: daysToTransplant = nursery period (sow -> transplant);
@@ -660,6 +660,6 @@ const file = {
   },
 };
 
-const out = new URL("../myacres-garden.homestead", import.meta.url);
+const out = new URL("../garden-plans/myacres-garden.homestead", import.meta.url);
 writeFileSync(out, JSON.stringify(file, null, 2));
 console.log(`Wrote ${builtCrops.length} crops -> ${out.pathname}`);
