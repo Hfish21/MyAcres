@@ -76,6 +76,27 @@ export default function LayoutPage() {
   // In-memory clipboard: ephemeral by design (no persistence — ADR-0002).
   const [clipboard, setClipboard] = React.useState<SpaceInput | null>(null);
   const [pasteCount, setPasteCount] = React.useState(0);
+  // Show-all bed names toggle. Default OFF (hover/selection reveal only); the
+  // per-viewer preference is a lightweight localStorage convenience.
+  const [showNames, setShowNames] = React.useState(false);
+  React.useEffect(() => {
+    try {
+      setShowNames(localStorage.getItem("myacres.layout.showNames") === "1");
+    } catch {
+      // localStorage may be unavailable (private mode, etc.) — ignore.
+    }
+  }, []);
+  function toggleNames() {
+    setShowNames((v) => {
+      const next = !v;
+      try {
+        localStorage.setItem("myacres.layout.showNames", next ? "1" : "0");
+      } catch {
+        // Persistence is best-effort — tolerate failures silently.
+      }
+      return next;
+    });
+  }
 
   const effectiveMode: CanvasMode = editable ? mode : "select";
   const selectedSpace = spaces.find((s) => s.id === selectedId) ?? null;
@@ -169,6 +190,8 @@ export default function LayoutPage() {
               onCancelDraw={() => setDraftPoints([])}
               hasSelection={!!selectedSpace}
               hasClipboard={!!clipboard}
+              showNames={showNames}
+              onToggleNames={toggleNames}
               onEdit={() => selectedSpace && setEditing(selectedSpace)}
               onCopy={copySelected}
               onPaste={pasteClipboard}
@@ -196,6 +219,7 @@ export default function LayoutPage() {
             asOfDate={asOf}
             mode={effectiveMode}
             editable={editable}
+            showAllNames={showNames || !editable}
             selectedId={selectedId}
             draftPoints={draftPoints}
             onSelect={setSelectedId}
