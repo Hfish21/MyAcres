@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Copy, ClipboardPaste, Trash2, SquarePen, Check, X } from "lucide-react";
+import { Pencil, Copy, ClipboardPaste, Trash2, SquarePen, Check, X, Tag } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,8 @@ interface LayoutToolbarProps {
   onCancelDraw: () => void;
   hasSelection: boolean;
   hasClipboard: boolean;
+  showNames: boolean;
+  onToggleNames: () => void;
   onEdit: () => void;
   onCopy: () => void;
   onPaste: () => void;
@@ -28,6 +30,8 @@ export function LayoutToolbar({
   onCancelDraw,
   hasSelection,
   hasClipboard,
+  showNames,
+  onToggleNames,
   onEdit,
   onCopy,
   onPaste,
@@ -78,6 +82,19 @@ export function LayoutToolbar({
           </Button>
         </>
       )}
+
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={onToggleNames}
+        aria-pressed={showNames}
+        className={cn(
+          "ml-auto",
+          showNames && "border-rust bg-rust text-canvas hover:bg-rust",
+        )}
+      >
+        <Tag /> Names
+      </Button>
     </div>
   );
 }

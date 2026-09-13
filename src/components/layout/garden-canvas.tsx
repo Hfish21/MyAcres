@@ -156,6 +156,7 @@ interface GardenCanvasProps {
   asOfDate: Date;
   mode: CanvasMode;
   editable: boolean;
+  showAllNames: boolean;
   selectedId: string | null;
   draftPoints: Point[];
   onSelect: (id: string | null) => void;
@@ -172,6 +173,7 @@ export function GardenCanvas({
   asOfDate,
   mode,
   editable,
+  showAllNames,
   selectedId,
   draftPoints,
   onSelect,
@@ -332,6 +334,9 @@ export function GardenCanvas({
           const bb = boundingBox(poly);
           const selected = space.id === selectedId;
           const hovered = space.id === hoverId && !selected;
+          // Labels de-clutter the canvas: hidden by default, revealed on hover,
+          // always shown for the selected bed, or all-on via the toolbar toggle.
+          const showLabel = showAllNames || selected || space.id === hoverId;
           const plants = plantsFor(space);
 
           // Nameplate floats just above the bed's top-left corner: name over a
@@ -363,7 +368,7 @@ export function GardenCanvas({
                 strokeWidth={selected ? 2 : 1.25}
                 vectorEffect="non-scaling-stroke"
                 onPointerDown={(e) => handleSpaceDown(e, space)}
-                onPointerEnter={() => editable && mode === "select" && setHoverId(space.id)}
+                onPointerEnter={() => setHoverId(space.id)}
                 onPointerLeave={() => setHoverId((id) => (id === space.id ? null : id))}
               />
               {plants.map((d, i) => (
@@ -377,8 +382,13 @@ export function GardenCanvas({
                 />
               ))}
 
-              {/* Nameplate (name pill + area), kept clear of the plantings */}
-              <g pointerEvents="none">
+              {/* Nameplate (name pill + area), kept clear of the plantings.
+                  Hidden by default; fades in on hover / selection / show-all. */}
+              <g
+                pointerEvents="none"
+                className="transition-opacity duration-150"
+                opacity={showLabel ? 1 : 0}
+              >
                 <rect
                   x={bb.minX}
                   y={pillY}

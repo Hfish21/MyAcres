@@ -54,6 +54,14 @@ An **SVG dot-grid canvas** (coordinates in feet). Desktop-editable, mobile read-
   just above** the bed's top-left corner — kept clear of the plantings so the label is always
   legible (it previously sat centered, on top of the dots). The pill picks up the rust border when
   the bed is selected.
+- **Nameplate visibility (de-clutter):** to stop labels piling up once many beds are copied,
+  nameplates are **hidden by default** and revealed only for the bed under the pointer (**hover**)
+  or the **selected** bed (the selected bed's label always shows). Labels fade in/out with a subtle
+  opacity transition. A toolbar **"Names"** toggle (lucide `Tag`, rust active state matching
+  Select/Draw, `aria-pressed`) flips **all** labels on permanently; default is **OFF**
+  (hover/selection-only). The preference persists per-viewer in `localStorage`
+  (`myacres.layout.showNames`, best-effort in try/catch). The read-only small-screen fallback (no
+  toolbar, no hover/selection) keeps all labels visible so nothing is lost there.
 - **Framing & scale:** the viewBox frames the actual content with a small margin (no forced
   minimum / origin anchoring, so there's little dead space), capped at `72vh` tall. A small
   **scale bar** anchored bottom-left states the grid's foot scale. Beds show a hover fill in
