@@ -61,6 +61,19 @@ An **SVG dot-grid canvas** (coordinates in feet). Desktop-editable, mobile read-
   "vertical support here" at a glance, stays legible at canvas scale, and is deliberately basic (we
   track only *that* a trellis exists, not its type). It sits above the plantings and doesn't
   clobber the crop-density dots, the hover/selection nameplates, or the date scrubber.
+- **Sun / shade overlay:** a toolbar **"Sun"** toggle (lucide `Sun`, rust active state + `aria-pressed`,
+  sitting beside **Names** — the two are independent, both can be on at once) shades each bed by its
+  stored `sun` level so you can read at a glance where the shade falls. It's a **shadow overlay** graded
+  on the `sun` enum: **Full sun** = no overlay (open to the sky) → **Part sun** → **Part shade** →
+  **Shade** = darkest, using theme-aware `--shade-1/2/3` tokens (a warm-charcoal wash on light paper; a
+  wider-spread near-black wash after dark, tuned so the steps stay distinguishable in the coffee-dark
+  theme). A space with **no `sun` set** renders a faint diagonal **hatch** — clearly "unknown", never
+  implying a level that isn't there. The overlay is purely a static map of the stored level (**not** a
+  time-of-day sun simulation, ADR-0004): it sits *under* the trellis indicator, plant-density glyphs, and
+  nameplates, so it never fights them, and it's independent of the date scrubber. A compact **legend**
+  (mono/label style, Full sun → Shade + Not set) appears only while the toggle is on. The preference
+  persists per-viewer in `localStorage` (`myacres.layout.showSun`, best-effort try/catch, parallel to
+  `showNames`). The read-only small-screen fallback still renders any persisted overlay sensibly.
 - **Bed nameplate:** each space's name + derived area sit in a compact two-line pill **floating
   just above** the bed's top-left corner — kept clear of the plantings so the label is always
   legible (it previously sat centered, on top of the dots). The pill picks up the rust border when

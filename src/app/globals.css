@@ -29,6 +29,12 @@
   --barn: #8b2e22; /* danger */
   --inkblue: #3e5a6b; /* info / today marker */
   --ripe: #d8431f; /* vivid "ready to harvest" fruit (layout glyphs) */
+  /* Sun/shade overlay steps (layout shading): a warm-charcoal shadow over the bed
+     fill, graded part-sun → shade. Alphas tuned per theme so the steps stay clearly
+     distinguishable on each paper — the dark theme needs a wider spread (see below). */
+  --shade-1: rgba(42, 38, 32, 0.13); /* part-sun  — lightest shade */
+  --shade-2: rgba(42, 38, 32, 0.28); /* part-shade */
+  --shade-3: rgba(42, 38, 32, 0.45); /* shade     — darkest */
 
   /* On-paper accent text variants that clear AA (spec §2.3) */
   --olive-ink: #4c5a32;
@@ -92,6 +98,11 @@
   --barn: #e0695c; /* danger */
   --inkblue: #7ba0b5; /* info / today marker */
   --ripe: #f4673f; /* vivid "ready to harvest" fruit — brighter for dark paper */
+  /* Wider alpha spread on the dark paper: overlaying near-black on the already-dark
+     panel converges fast, so the steps are pushed apart to stay legible after dark. */
+  --shade-1: rgba(0, 0, 0, 0.28); /* part-sun */
+  --shade-2: rgba(0, 0, 0, 0.52); /* part-shade */
+  --shade-3: rgba(0, 0, 0, 0.75); /* shade */
 
   /* On-paper accent text variants (legible on the dark panel) */
   --olive-ink: #a8bc7e;
@@ -120,6 +131,9 @@
   --color-barn: var(--barn);
   --color-inkblue: var(--inkblue);
   --color-ripe: var(--ripe);
+  --color-shade-1: var(--shade-1);
+  --color-shade-2: var(--shade-2);
+  --color-shade-3: var(--shade-3);
   --color-olive-ink: var(--olive-ink);
   --color-amber-ink: var(--amber-ink);
   --color-ochre-ink: var(--ochre-ink);

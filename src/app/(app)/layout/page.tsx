@@ -9,7 +9,7 @@ import { cropColorMap } from "@/lib/garden/colors";
 import { timelineWindow } from "@/lib/garden/insights";
 import { translatePolygon } from "@/lib/garden/geometry";
 import type { Point, Space, SpaceInput } from "@/lib/garden/schema";
-import { GardenCanvas, type CanvasMode } from "@/components/layout/garden-canvas";
+import { GardenCanvas, SunLegend, type CanvasMode } from "@/components/layout/garden-canvas";
 import { LayoutToolbar } from "@/components/layout/layout-toolbar";
 import { DateScrubber } from "@/components/layout/date-scrubber";
 import { SpaceDetailDialog } from "@/components/layout/space-detail-dialog";
@@ -92,6 +92,26 @@ export default function LayoutPage() {
       const next = !v;
       try {
         localStorage.setItem("myacres.layout.showNames", next ? "1" : "0");
+      } catch {
+        // Persistence is best-effort — tolerate failures silently.
+      }
+      return next;
+    });
+  }
+  // Sun/shade overlay toggle — same lightweight per-viewer persistence as Names.
+  const [showSun, setShowSun] = React.useState(false);
+  React.useEffect(() => {
+    try {
+      setShowSun(localStorage.getItem("myacres.layout.showSun") === "1");
+    } catch {
+      // localStorage may be unavailable (private mode, etc.) — ignore.
+    }
+  }, []);
+  function toggleSun() {
+    setShowSun((v) => {
+      const next = !v;
+      try {
+        localStorage.setItem("myacres.layout.showSun", next ? "1" : "0");
       } catch {
         // Persistence is best-effort — tolerate failures silently.
       }
@@ -193,6 +213,8 @@ export default function LayoutPage() {
               hasClipboard={!!clipboard}
               showNames={showNames}
               onToggleNames={toggleNames}
+              showSun={showSun}
+              onToggleSun={toggleSun}
               onEdit={() => selectedSpace && setEditing(selectedSpace)}
               onCopy={copySelected}
               onPaste={pasteClipboard}
@@ -221,6 +243,7 @@ export default function LayoutPage() {
             mode={effectiveMode}
             editable={editable}
             showAllNames={showNames || !editable}
+            showSun={showSun}
             selectedId={selectedId}
             draftPoints={draftPoints}
             onSelect={setSelectedId}
@@ -228,6 +251,8 @@ export default function LayoutPage() {
             onCloseDraft={closeDraft}
             onMoveSpace={moveSpace}
           />
+
+          {showSun ? <SunLegend /> : null}
 
           <DateScrubber
             start={win.start}
