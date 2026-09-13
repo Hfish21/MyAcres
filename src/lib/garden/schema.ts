@@ -54,6 +54,9 @@ export const cropSchema = z.object({
   frostHardy: z.boolean(),
   water: waterSchema,
   soilPh: rangeSchema.optional(),
+  // A viner that wants vertical support (indeterminate tomato, cucumber, pole
+  // bean…). Optional (absent = false) so older files without it load unchanged.
+  needsTrellis: z.boolean().optional(),
   // output
   yieldPerPlant: rangeSchema.optional(),
   yieldUnit: z.string().optional(),
@@ -91,6 +94,9 @@ export const spaceSchema = z.object({
   shape: polygonSchema,
   capacityOverride: z.number().int().positive().optional(), // plants
   sun: lightSchema.optional(), // reuse the crop light enum
+  // Whether this space provides a trellis / vertical support. Optional
+  // (absent = false) so older files without it load unchanged.
+  trellis: z.boolean().optional(),
   notes: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),

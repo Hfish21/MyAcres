@@ -23,6 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 const selectClass =
@@ -58,6 +59,7 @@ export function SpaceDetailDialog({ space, onOpenChange, onSave }: SpaceDetailDi
   const [type, setType] = React.useState<SpaceType>("bed");
   const [sun, setSun] = React.useState<LightLevel | "">("");
   const [capacityOverride, setCapacityOverride] = React.useState("");
+  const [trellis, setTrellis] = React.useState(false);
   const [notes, setNotes] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
 
@@ -67,6 +69,7 @@ export function SpaceDetailDialog({ space, onOpenChange, onSave }: SpaceDetailDi
       setType(space.type);
       setSun(space.sun ?? "");
       setCapacityOverride(space.capacityOverride != null ? String(space.capacityOverride) : "");
+      setTrellis(space.trellis ?? false);
       setNotes(space.notes ?? "");
       setError(null);
     }
@@ -81,6 +84,7 @@ export function SpaceDetailDialog({ space, onOpenChange, onSave }: SpaceDetailDi
       shape: space.shape, // shape comes from the canvas, unchanged here
       capacityOverride: co,
       sun: sun || undefined,
+      trellis,
       notes: notes.trim() || undefined,
     };
     const result = spaceInputSchema.safeParse(candidate);
@@ -145,6 +149,12 @@ export function SpaceDetailDialog({ space, onOpenChange, onSave }: SpaceDetailDi
               />
               <span className="shrink-0 text-sm text-ink-3">plants</span>
             </div>
+          </Field>
+          <Field label="Has trellis" full>
+            <label className="flex items-center gap-3 text-sm text-ink-2">
+              <Switch checked={trellis} onCheckedChange={setTrellis} />
+              Provides a trellis or vertical support
+            </label>
           </Field>
           <Field label="Notes" full>
             <textarea

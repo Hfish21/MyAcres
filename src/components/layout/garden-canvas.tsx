@@ -102,6 +102,37 @@ function PlantGlyph({
   );
 }
 
+// A trellis indicator: a short rail with a row of vertical hatch marks along the
+// bed's top edge — reads as "this bed has vertical support" at a glance. Flat,
+// rust, borders-not-shadows (Paper Desktop). Deliberately simple: we track only
+// that a trellis exists, not its type.
+function TrellisMarker({
+  x0,
+  x1,
+  y,
+}: {
+  x0: number;
+  x1: number;
+  y: number;
+}) {
+  const width = x1 - x0;
+  if (width <= 0) return null;
+  const height = Math.min(0.9, Math.max(0.45, width * 0.12)); // how tall the posts rise
+  const step = Math.min(0.8, Math.max(0.35, width / 8)); // gap between posts
+  const posts: number[] = [];
+  for (let x = x0; x <= x1 + 1e-6; x += step) posts.push(Math.min(x, x1));
+  return (
+    <g pointerEvents="none" className="stroke-rust" strokeWidth={1} vectorEffect="non-scaling-stroke">
+      {/* top rail */}
+      <line x1={x0} y1={y - height} x2={x1} y2={y - height} opacity={0.85} />
+      {/* vertical posts */}
+      {posts.map((x, i) => (
+        <line key={i} x1={x} y1={y - height} x2={x} y2={y} opacity={0.7} />
+      ))}
+    </g>
+  );
+}
+
 // A small measurement label drawn on the canvas (in feet units). `area` is the
 // headline running total (solid rust); `edge` labels are quieter (panel + rust).
 function MeasureChip({
@@ -371,6 +402,9 @@ export function GardenCanvas({
                 onPointerEnter={() => setHoverId(space.id)}
                 onPointerLeave={() => setHoverId((id) => (id === space.id ? null : id))}
               />
+              {space.trellis ? (
+                <TrellisMarker x0={bb.minX + 0.15} x1={bb.maxX - 0.15} y={bb.minY + 0.1} />
+              ) : null}
               {plants.map((d, i) => (
                 <PlantGlyph
                   key={i}

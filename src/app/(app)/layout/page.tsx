@@ -34,6 +34,7 @@ function metaOf(s: Space): SpaceInput {
     shape: s.shape,
     capacityOverride: s.capacityOverride,
     sun: s.sun,
+    trellis: s.trellis ?? false,
     notes: s.notes,
   };
 }

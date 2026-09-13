@@ -18,7 +18,9 @@ database — the user brings the numbers (tool-not-oracle).
   (direct-sow | transplant), `daysToGerminate`, `daysToTransplant?` (transplant only),
   `daysToMaturity`, `harvestStyle` (single | continuous), `harvestWindow?`
 - **Spacing:** `spacingInRow` (in), `spacingBetweenRows?` (in)
-- **Requirements:** `light`, `season[]`, `tempRange?` (°F), `frostHardy`, `water`, `soilPh?`
+- **Requirements:** `light`, `season[]`, `tempRange?` (°F), `frostHardy`, `needsTrellis?`
+  (a viner that wants vertical support — indeterminate tomato, cucumber, pole bean…),
+  `water`, `soilPh?`
 - **Output:** `yieldPerPlant?`, `yieldUnit?`
 - **Internal:** `id` (uuid), `createdAt`, `updatedAt`
 
@@ -27,7 +29,8 @@ database — the user brings the numbers (tool-not-oracle).
 - A ledger **table** (name + variety, family badge, method, days-to-maturity, spacing, light,
   seasons) with name/family **filters** and an empty state.
 - **Add/Edit dialog** — the full field set grouped into sections; the `daysToTransplant` field
-  appears only for transplant crops; validated with Zod on submit (inline errors).
+  appears only for transplant crops; a **"Needs a trellis"** toggle (in Requirements) marks
+  viners that want vertical support; validated with Zod on submit (inline errors).
 - **Delete** — confirm dialog; cascades to any plantings of that crop (names the count).
 
 ## Components

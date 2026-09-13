@@ -23,6 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 const selectClass =
@@ -38,6 +39,7 @@ interface FormState {
   width: string;
   capacityOverride: string;
   sun: LightLevel | "";
+  trellis: boolean;
   notes: string;
 }
 
@@ -49,6 +51,7 @@ function emptyForm(): FormState {
     width: "",
     capacityOverride: "",
     sun: "",
+    trellis: false,
     notes: "",
   };
 }
@@ -62,6 +65,7 @@ function fromSpace(s: Space): FormState {
     width: String(dims.width),
     capacityOverride: s.capacityOverride != null ? String(s.capacityOverride) : "",
     sun: s.sun ?? "",
+    trellis: s.trellis ?? false,
     notes: s.notes ?? "",
   };
 }
@@ -131,6 +135,7 @@ export function SpaceDialog({ open, onOpenChange, space, onSave }: SpaceDialogPr
       shape: rectPolygon(length ?? 0, width ?? 0),
       capacityOverride: num(form.capacityOverride),
       sun: form.sun || undefined,
+      trellis: form.trellis,
       notes: form.notes.trim() || undefined,
     };
     const result = spaceInputSchema.safeParse(candidate);
@@ -232,6 +237,15 @@ export function SpaceDialog({ open, onOpenChange, space, onSave }: SpaceDialogPr
             <p className="flex h-11 items-center font-mono text-sm text-ink-2">
               {previewArea != null ? `${previewArea} sq ft` : "—"}
             </p>
+          </Field>
+          <Field label="Has trellis" full>
+            <label className="flex items-center gap-3 text-sm text-ink-2">
+              <Switch
+                checked={form.trellis}
+                onCheckedChange={(v) => set("trellis", v)}
+              />
+              Provides a trellis or vertical support
+            </label>
           </Field>
           <Field label="Notes" full>
             <textarea

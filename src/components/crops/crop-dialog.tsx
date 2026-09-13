@@ -61,6 +61,7 @@ interface FormState {
   season: Season[];
   tempRange: RangeValue;
   frostHardy: boolean;
+  needsTrellis: boolean;
   water: WaterLevel;
   soilPh: RangeValue;
   yieldPerPlant: RangeValue;
@@ -89,6 +90,7 @@ function emptyForm(): FormState {
     season: [],
     tempRange: { ...EMPTY_RANGE },
     frostHardy: false,
+    needsTrellis: false,
     water: "medium",
     soilPh: { ...EMPTY_RANGE },
     yieldPerPlant: { ...EMPTY_RANGE },
@@ -114,6 +116,7 @@ function fromCrop(c: Crop): FormState {
     season: c.season,
     tempRange: toRangeValue(c.tempRange),
     frostHardy: c.frostHardy,
+    needsTrellis: c.needsTrellis ?? false,
     water: c.water,
     soilPh: toRangeValue(c.soilPh),
     yieldPerPlant: toRangeValue(c.yieldPerPlant),
@@ -158,6 +161,7 @@ function buildInput(form: FormState): unknown {
     season: form.season,
     tempRange: range(form.tempRange),
     frostHardy: form.frostHardy,
+    needsTrellis: form.needsTrellis,
     water: form.water,
     soilPh: range(form.soilPh),
     yieldPerPlant: range(form.yieldPerPlant),
@@ -433,6 +437,15 @@ export function CropDialog({ open, onOpenChange, crop, onSave }: CropDialogProps
                   onCheckedChange={(v) => set("frostHardy", v)}
                 />
               </div>
+            </Field>
+            <Field label="Needs a trellis">
+              <label className="flex h-11 items-center gap-3 text-sm text-ink-2">
+                <Switch
+                  checked={form.needsTrellis}
+                  onCheckedChange={(v) => set("needsTrellis", v)}
+                />
+                Needs vertical support
+              </label>
             </Field>
           </Section>
 
