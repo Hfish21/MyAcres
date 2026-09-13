@@ -102,34 +102,45 @@ function PlantGlyph({
   );
 }
 
-// A trellis indicator: a short rail with a row of vertical hatch marks along the
-// bed's top edge — reads as "this bed has vertical support" at a glance. Flat,
-// rust, borders-not-shadows (Paper Desktop). Deliberately simple: we track only
-// that a trellis exists, not its type.
+// A trellis indicator: a single dashed line running the length of the bed, down
+// its center. The dashes read as thatching/netting, it spans the whole space so
+// it clearly belongs to that bed, and it renders beneath the plant glyphs so it
+// never fights the produce dots or the nameplates. Flat rust, non-scaling stroke
+// (Paper Desktop). Deliberately simple: we track only that a trellis exists.
 function TrellisMarker({
-  x0,
-  x1,
-  y,
+  minX,
+  minY,
+  maxX,
+  maxY,
 }: {
-  x0: number;
-  x1: number;
-  y: number;
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
 }) {
-  const width = x1 - x0;
-  if (width <= 0) return null;
-  const height = Math.min(0.9, Math.max(0.45, width * 0.12)); // how tall the posts rise
-  const step = Math.min(0.8, Math.max(0.35, width / 8)); // gap between posts
-  const posts: number[] = [];
-  for (let x = x0; x <= x1 + 1e-6; x += step) posts.push(Math.min(x, x1));
+  const w = maxX - minX;
+  const h = maxY - minY;
+  if (w <= 0 || h <= 0) return null;
+  const vertical = h >= w; // run the line along the long axis
+  const inset = Math.min(0.3, (vertical ? h : w) * 0.12); // pull the ends off the border
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const [lx1, ly1, lx2, ly2] = vertical
+    ? [cx, minY + inset, cx, maxY - inset]
+    : [minX + inset, cy, maxX - inset, cy];
   return (
-    <g pointerEvents="none" className="stroke-rust" strokeWidth={1} vectorEffect="non-scaling-stroke">
-      {/* top rail */}
-      <line x1={x0} y1={y - height} x2={x1} y2={y - height} opacity={0.85} />
-      {/* vertical posts */}
-      {posts.map((x, i) => (
-        <line key={i} x1={x} y1={y - height} x2={x} y2={y} opacity={0.7} />
-      ))}
-    </g>
+    <line
+      pointerEvents="none"
+      className="stroke-rust"
+      x1={lx1}
+      y1={ly1}
+      x2={lx2}
+      y2={ly2}
+      strokeWidth={1.25}
+      strokeDasharray="4 3"
+      opacity={0.5}
+      vectorEffect="non-scaling-stroke"
+    />
   );
 }
 
@@ -403,7 +414,7 @@ export function GardenCanvas({
                 onPointerLeave={() => setHoverId((id) => (id === space.id ? null : id))}
               />
               {space.trellis ? (
-                <TrellisMarker x0={bb.minX + 0.15} x1={bb.maxX - 0.15} y={bb.minY + 0.1} />
+                <TrellisMarker minX={bb.minX} minY={bb.minY} maxX={bb.maxX} maxY={bb.maxY} />
               ) : null}
               {plants.map((d, i) => (
                 <PlantGlyph
