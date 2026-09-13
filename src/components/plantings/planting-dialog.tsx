@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus } from "lucide-react";
+import { Plus, Check, TriangleAlert } from "lucide-react";
 
 import {
   plantingInputSchema,
@@ -255,11 +255,26 @@ export function PlantingDialog({
           {crop && space ? (
             <div className="rounded-md border border-line bg-inset/50 p-3 text-sm">
               <p className="mb-1 font-mono text-xs font-semibold tracking-wide text-ink-3 uppercase">
-                Capacity
+                Fit
               </p>
               {cap != null ? (
                 <p className={cn("font-mono", over ? "text-ochre-ink" : "text-olive-ink")}>
                   {qty || 0} of ~{cap} — {over ? "over capacity" : "fits"}
+                </p>
+              ) : null}
+              {crop.needsTrellis ? (
+                <p
+                  className={cn(
+                    "mt-1 flex items-center gap-1.5 font-mono",
+                    space.trellis ? "text-olive-ink" : "text-ochre-ink",
+                  )}
+                >
+                  {space.trellis ? (
+                    <Check className="size-4 shrink-0" />
+                  ) : (
+                    <TriangleAlert className="size-4 shrink-0" />
+                  )}
+                  Needs trellis — space {space.trellis ? "has one" : "has none"}
                 </p>
               ) : null}
             </div>

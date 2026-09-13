@@ -102,6 +102,51 @@ function PlantGlyph({
   );
 }
 
+// A trellis indicator: a single dashed line running the length of the bed, down
+// its center. The dashes read as thatching/netting, it spans the whole space so
+// it clearly belongs to that bed, and it renders beneath the plant glyphs so it
+// never fights the produce dots or the nameplates. Flat rust, non-scaling stroke
+// (Paper Desktop). Deliberately simple: we track only that a trellis exists.
+function TrellisMarker({
+  minX,
+  minY,
+  maxX,
+  maxY,
+  direction,
+}: {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+  direction?: "horizontal" | "vertical";
+}) {
+  const w = maxX - minX;
+  const h = maxY - minY;
+  if (w <= 0 || h <= 0) return null;
+  // Explicit direction wins; otherwise run the line along the long axis.
+  const vertical = direction ? direction === "vertical" : h >= w;
+  const inset = Math.min(0.3, (vertical ? h : w) * 0.12); // pull the ends off the border
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const [lx1, ly1, lx2, ly2] = vertical
+    ? [cx, minY + inset, cx, maxY - inset]
+    : [minX + inset, cy, maxX - inset, cy];
+  return (
+    <line
+      pointerEvents="none"
+      className="stroke-rust"
+      x1={lx1}
+      y1={ly1}
+      x2={lx2}
+      y2={ly2}
+      strokeWidth={1.25}
+      strokeDasharray="4 3"
+      opacity={0.5}
+      vectorEffect="non-scaling-stroke"
+    />
+  );
+}
+
 // A small measurement label drawn on the canvas (in feet units). `area` is the
 // headline running total (solid rust); `edge` labels are quieter (panel + rust).
 function MeasureChip({
@@ -371,6 +416,15 @@ export function GardenCanvas({
                 onPointerEnter={() => setHoverId(space.id)}
                 onPointerLeave={() => setHoverId((id) => (id === space.id ? null : id))}
               />
+              {space.trellis ? (
+                <TrellisMarker
+                  minX={bb.minX}
+                  minY={bb.minY}
+                  maxX={bb.maxX}
+                  maxY={bb.maxY}
+                  direction={space.trellisDirection}
+                />
+              ) : null}
               {plants.map((d, i) => (
                 <PlantGlyph
                   key={i}

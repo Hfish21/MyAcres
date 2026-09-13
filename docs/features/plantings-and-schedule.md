@@ -22,14 +22,19 @@ transplanted → growing → harvesting → done/failed), `events[]` (lifecycle 
   harvest / harvest-end **date ranges**, from `startDate` + the crop's timing (harvest counts from
   transplant for transplant crops, from sow otherwise).
 - **Capacity / fits** (`geometry.ts`) — `quantity` vs `floor(area ÷ spacing)`.
+- **Trellis fit** — if the crop's `needsTrellis` is true, whether the assigned space's `trellis`
+  is true. Purely a derived indicator (never stored, never blocks).
 
 ## Behavior
 
 - A ledger **table** (crop, space, start, status badge, projected harvest window, qty/capacity)
-  with crop/space search + status filter.
-- **Add/Edit dialog** — pick crop + space + date + quantity; it shows the **projected schedule**
-  and **capacity** live ("8 of ~5 — over capacity"). Over-capacity **warns but never blocks**
-  (tool-not-oracle). Status + checkpoint notes editable.
+  with crop/space search + status filter. When a crop `needsTrellis`, the space cell carries a
+  small ✅ (olive check — "space has one") or ⚠️ (ochre alert — "space has none") indicator.
+- **Add/Edit dialog** — pick crop + space + date + quantity; the **Fit** box shows the **capacity**
+  live ("8 of ~5 — over capacity") and, when the crop `needsTrellis`, a trellis line
+  ("Needs trellis — space has one" ✅ / "Needs trellis — space has none" ⚠️) in the same visual
+  language; a separate box shows the **projected schedule**. Over-capacity and a missing trellis
+  both **warn but never block** (tool-not-oracle). Status + checkpoint notes editable.
 - **Delete** — confirm. Deleting a referenced crop or space cascades to its plantings.
 
 ## The "schedule" — three layers (reconciled in ADR-0009)

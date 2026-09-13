@@ -10,7 +10,11 @@ import {
   type LightLevel,
 } from "@/lib/garden/schema";
 import { SPACE_TYPE_LABELS, LIGHT_LABELS } from "@/lib/garden/labels";
-import { rectDimsFromPolygon, rectPolygon } from "@/lib/garden/geometry";
+import {
+  autoTrellisDirection,
+  rectDimsFromPolygon,
+  rectPolygon,
+} from "@/lib/garden/geometry";
 import {
   Dialog,
   DialogClose,
@@ -23,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 const selectClass =
@@ -38,6 +43,8 @@ interface FormState {
   width: string;
   capacityOverride: string;
   sun: LightLevel | "";
+  trellis: boolean;
+  trellisDirection: "horizontal" | "vertical";
   notes: string;
 }
 
@@ -49,6 +56,8 @@ function emptyForm(): FormState {
     width: "",
     capacityOverride: "",
     sun: "",
+    trellis: false,
+    trellisDirection: "vertical",
     notes: "",
   };
 }
@@ -62,6 +71,8 @@ function fromSpace(s: Space): FormState {
     width: String(dims.width),
     capacityOverride: s.capacityOverride != null ? String(s.capacityOverride) : "",
     sun: s.sun ?? "",
+    trellis: s.trellis ?? false,
+    trellisDirection: s.trellisDirection ?? autoTrellisDirection(s.shape),
     notes: s.notes ?? "",
   };
 }
@@ -131,6 +142,8 @@ export function SpaceDialog({ open, onOpenChange, space, onSave }: SpaceDialogPr
       shape: rectPolygon(length ?? 0, width ?? 0),
       capacityOverride: num(form.capacityOverride),
       sun: form.sun || undefined,
+      trellis: form.trellis,
+      trellisDirection: form.trellis ? form.trellisDirection : undefined,
       notes: form.notes.trim() || undefined,
     };
     const result = spaceInputSchema.safeParse(candidate);
@@ -233,6 +246,29 @@ export function SpaceDialog({ open, onOpenChange, space, onSave }: SpaceDialogPr
               {previewArea != null ? `${previewArea} sq ft` : "—"}
             </p>
           </Field>
+          <Field label="Has trellis" full>
+            <label className="flex items-center gap-3 text-sm text-ink-2">
+              <Switch
+                checked={form.trellis}
+                onCheckedChange={(v) => set("trellis", v)}
+              />
+              Provides a trellis or vertical support
+            </label>
+          </Field>
+          {form.trellis ? (
+            <Field label="Trellis direction" full>
+              <select
+                className={selectClass}
+                value={form.trellisDirection}
+                onChange={(e) =>
+                  set("trellisDirection", e.target.value as "horizontal" | "vertical")
+                }
+              >
+                <option value="vertical">Vertical</option>
+                <option value="horizontal">Horizontal</option>
+              </select>
+            </Field>
+          ) : null}
           <Field label="Notes" full>
             <textarea
               className={cn(selectClass, "h-20 resize-y py-2")}
