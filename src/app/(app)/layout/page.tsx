@@ -38,6 +38,20 @@ function metaOf(s: Space): SpaceInput {
   };
 }
 
+// Feet a pasted bed is nudged (down-right) off its source, cascading further on
+// each repeat paste so a run of copies fans out instead of stacking exactly.
+const PASTE_OFFSET_FT = 3;
+
+// A name that doesn't collide with an existing bed: "X copy", then "X copy 2",
+// "X copy 3", …
+function uniqueCopyName(base: string, existing: string[]): string {
+  const taken = new Set(existing);
+  let candidate = `${base} copy`;
+  let n = 2;
+  while (taken.has(candidate)) candidate = `${base} copy ${n++}`;
+  return candidate;
+}
+
 export default function LayoutPage() {
   const { store, dataVersion } = useHomestead();
 
@@ -59,6 +73,9 @@ export default function LayoutPage() {
   const [asOf, setAsOf] = React.useState<Date>(new Date());
   const [editing, setEditing] = React.useState<Space | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<Space | null>(null);
+  // In-memory clipboard: ephemeral by design (no persistence — ADR-0002).
+  const [clipboard, setClipboard] = React.useState<SpaceInput | null>(null);
+  const [pasteCount, setPasteCount] = React.useState(0);
 
   const effectiveMode: CanvasMode = editable ? mode : "select";
   const selectedSpace = spaces.find((s) => s.id === selectedId) ?? null;
@@ -89,15 +106,49 @@ export default function LayoutPage() {
     store.updateSpace(id, { ...metaOf(s), shape: polygon });
   }
 
-  function copySelected() {
+  // Copy the selected space to the in-memory clipboard. Does NOT create a bed.
+  const copySelected = React.useCallback(() => {
     if (!selectedSpace) return;
+    setClipboard(metaOf(selectedSpace));
+    setPasteCount(0);
+  }, [selectedSpace]);
+
+  // Paste a new bed from the clipboard, offset (and cascaded on repeat) so it
+  // doesn't sit on top of the source; select it for immediate further edits.
+  const pasteClipboard = React.useCallback(() => {
+    if (!clipboard) return;
+    const n = pasteCount + 1;
+    const offset = PASTE_OFFSET_FT * n;
     const created = store.addSpace({
-      ...metaOf(selectedSpace),
-      name: `${selectedSpace.name} copy`,
-      shape: translatePolygon(selectedSpace.shape, 3, 3),
+      ...clipboard,
+      name: uniqueCopyName(clipboard.name, store.spaces.map((s) => s.name)),
+      shape: translatePolygon(clipboard.shape, offset, offset),
     });
+    setPasteCount(n);
     setSelectedId(created.id);
-  }
+  }, [clipboard, pasteCount, store]);
+
+  // Cmd/Ctrl+C copies, Cmd/Ctrl+V pastes — only on the editable Layout surface
+  // in Select mode, and never while typing or with a live text selection.
+  React.useEffect(() => {
+    if (!editable || mode !== "select") return;
+    function onKey(e: KeyboardEvent) {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      const key = e.key.toLowerCase();
+      if (key === "c" && selectedSpace) {
+        if (window.getSelection()?.toString()) return; // let native copy win
+        e.preventDefault();
+        copySelected();
+      } else if (key === "v" && clipboard) {
+        e.preventDefault();
+        pasteClipboard();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [editable, mode, selectedSpace, clipboard, copySelected, pasteClipboard]);
 
   function confirmDelete() {
     if (deleteTarget) store.deleteSpace(deleteTarget.id);
@@ -117,8 +168,10 @@ export default function LayoutPage() {
               onFinish={closeDraft}
               onCancelDraw={() => setDraftPoints([])}
               hasSelection={!!selectedSpace}
+              hasClipboard={!!clipboard}
               onEdit={() => selectedSpace && setEditing(selectedSpace)}
               onCopy={copySelected}
+              onPaste={pasteClipboard}
               onDelete={() => selectedSpace && setDeleteTarget(selectedSpace)}
             />
           ) : (

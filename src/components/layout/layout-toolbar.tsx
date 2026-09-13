@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Copy, Trash2, SquarePen, Check, X } from "lucide-react";
+import { Pencil, Copy, ClipboardPaste, Trash2, SquarePen, Check, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -13,8 +13,10 @@ interface LayoutToolbarProps {
   onFinish: () => void;
   onCancelDraw: () => void;
   hasSelection: boolean;
+  hasClipboard: boolean;
   onEdit: () => void;
   onCopy: () => void;
+  onPaste: () => void;
   onDelete: () => void;
 }
 
@@ -25,8 +27,10 @@ export function LayoutToolbar({
   onFinish,
   onCancelDraw,
   hasSelection,
+  hasClipboard,
   onEdit,
   onCopy,
+  onPaste,
   onDelete,
 }: LayoutToolbarProps) {
   return (
@@ -65,6 +69,9 @@ export function LayoutToolbar({
           </Button>
           <Button size="sm" variant="secondary" onClick={onCopy} disabled={!hasSelection}>
             <Copy /> Copy
+          </Button>
+          <Button size="sm" variant="secondary" onClick={onPaste} disabled={!hasClipboard}>
+            <ClipboardPaste /> Paste
           </Button>
           <Button size="sm" variant="ghost" onClick={onDelete} disabled={!hasSelection}>
             <Trash2 /> Delete

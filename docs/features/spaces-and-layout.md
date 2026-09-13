@@ -29,8 +29,18 @@ An **SVG dot-grid canvas** (coordinates in feet). Desktop-editable, mobile read-
   Finish) → creates a Space and opens its details popup. **Live dimensions** render as you draw —
   each edge shows its length (`9 ft`) and the running polygon area shows as a bold rust chip
   (`≈ 68 sq ft`, approximate until closed), so you can lay out a bed to size.
-- **Select mode:** click a space to **drag** it (snaps), **Copy**, **Delete** (cascade-confirm),
-  or **Edit** details (name/type/sun/capacity/notes; area shown).
+- **Select mode:** click a space to **drag** it (snaps), **Copy**/**Paste**, **Delete**
+  (cascade-confirm), or **Edit** details (name/type/sun/capacity/notes; area shown).
+- **Copy / paste (replicate beds):** **Copy** puts the selected space on an in-memory clipboard
+  (component state — ephemeral, not persisted to the file or across reload, per ADR-0002); it does
+  **not** create a bed. **Paste** (toolbar button, disabled when the clipboard is empty) drops a new
+  space with the same shape/type/attributes, offset down-right off the source (via
+  `translatePolygon`) and named to avoid collisions (`X copy`, then `X copy 2`, `X copy 3`…); the new
+  bed is selected. Repeat pastes **cascade** — each copy is offset a step further than the last — so
+  replicating a run of identical beds is fast. Keyboard: **Cmd/Ctrl+C** copies the selection,
+  **Cmd/Ctrl+V** pastes; both fire only on the editable canvas in Select mode, and are suppressed
+  while typing in a field or when text is selected (native copy wins). *Multi-select copy is future
+  work — copy is single-space for now.*
 - **Plant density & maturity:** each space fills with **per-crop glyphs**, packed at the crop's
   spacing up to capacity (`packPositions` + `pointInPolygon`) — organizational, not pixel-accurate,
   packed into a slightly **inset** polygon to keep a margin off the border. Each glyph reflects the
@@ -57,4 +67,5 @@ geometry in `src/lib/garden/geometry.ts`, colors in `colors.ts`.
 
 ## Out of scope / future
 Editing a polygon's vertices after drawing (delete + redraw for now), true curves/ovals,
-pan/zoom, dragging individual plants, multi-select, and time-aware *capacity* (succession).
+pan/zoom, dragging individual plants, multi-select (incl. multi-space copy/paste), and time-aware
+*capacity* (succession).
