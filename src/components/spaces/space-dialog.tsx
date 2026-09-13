@@ -10,7 +10,11 @@ import {
   type LightLevel,
 } from "@/lib/garden/schema";
 import { SPACE_TYPE_LABELS, LIGHT_LABELS } from "@/lib/garden/labels";
-import { rectDimsFromPolygon, rectPolygon } from "@/lib/garden/geometry";
+import {
+  autoTrellisDirection,
+  rectDimsFromPolygon,
+  rectPolygon,
+} from "@/lib/garden/geometry";
 import {
   Dialog,
   DialogClose,
@@ -40,6 +44,7 @@ interface FormState {
   capacityOverride: string;
   sun: LightLevel | "";
   trellis: boolean;
+  trellisDirection: "horizontal" | "vertical";
   notes: string;
 }
 
@@ -52,6 +57,7 @@ function emptyForm(): FormState {
     capacityOverride: "",
     sun: "",
     trellis: false,
+    trellisDirection: "vertical",
     notes: "",
   };
 }
@@ -66,6 +72,7 @@ function fromSpace(s: Space): FormState {
     capacityOverride: s.capacityOverride != null ? String(s.capacityOverride) : "",
     sun: s.sun ?? "",
     trellis: s.trellis ?? false,
+    trellisDirection: s.trellisDirection ?? autoTrellisDirection(s.shape),
     notes: s.notes ?? "",
   };
 }
@@ -136,6 +143,7 @@ export function SpaceDialog({ open, onOpenChange, space, onSave }: SpaceDialogPr
       capacityOverride: num(form.capacityOverride),
       sun: form.sun || undefined,
       trellis: form.trellis,
+      trellisDirection: form.trellis ? form.trellisDirection : undefined,
       notes: form.notes.trim() || undefined,
     };
     const result = spaceInputSchema.safeParse(candidate);
@@ -247,6 +255,20 @@ export function SpaceDialog({ open, onOpenChange, space, onSave }: SpaceDialogPr
               Provides a trellis or vertical support
             </label>
           </Field>
+          {form.trellis ? (
+            <Field label="Trellis direction" full>
+              <select
+                className={selectClass}
+                value={form.trellisDirection}
+                onChange={(e) =>
+                  set("trellisDirection", e.target.value as "horizontal" | "vertical")
+                }
+              >
+                <option value="vertical">Vertical</option>
+                <option value="horizontal">Horizontal</option>
+              </select>
+            </Field>
+          ) : null}
           <Field label="Notes" full>
             <textarea
               className={cn(selectClass, "h-20 resize-y py-2")}

@@ -14,17 +14,20 @@ garden to scale and see what's planted where, over time.
 
 `name`, `type` (bed/row/container/ground/other), `shape` (`{ points: [{x,y}] }` — **absolute
 canvas coordinates in feet**), `capacityOverride?`, `sun?`, `trellis?` (whether the space provides
-a trellis / vertical support), `notes?`, timestamps. Area is derived via `polygonArea`; there is
-**no separate position field** — the polygon's points are its place on the canvas. `trellis` is
-optional (absent = false), so existing `.homestead` files load unchanged (additive pattern,
-ADR-0008).
+a trellis / vertical support), `trellisDirection?` (`"horizontal"` | `"vertical"` — which way the
+trellis runs), `notes?`, timestamps. Area is derived via `polygonArea`; there is
+**no separate position field** — the polygon's points are its place on the canvas. `trellis` and
+`trellisDirection` are both optional (absent = false / auto), so existing `.homestead` files load
+unchanged (additive pattern, ADR-0008). When `trellisDirection` is absent the indicator falls back
+to the bed's long axis (`autoTrellisDirection`).
 
 ## Behavior
 
 ### `/spaces` — list (CRUD)
 Ledger table (name, type, size LxW, area, sun) with a rectangle-first add/edit dialog (enter
 length × width → a rectangle polygon), filters, and cascade-aware delete. The add/edit dialog and
-the layout **Space details** popup both carry a **"Has trellis"** toggle.
+the layout **Space details** popup both carry a **"Has trellis"** toggle; when it's on, a
+**"Trellis direction"** picker (Vertical / Horizontal) appears, defaulting to the bed's long axis.
 
 ### `/layout` — the editor (`src/components/layout/`)
 An **SVG dot-grid canvas** (coordinates in feet). Desktop-editable, mobile read-only.

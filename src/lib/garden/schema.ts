@@ -97,6 +97,9 @@ export const spaceSchema = z.object({
   // Whether this space provides a trellis / vertical support. Optional
   // (absent = false) so older files without it load unchanged.
   trellis: z.boolean().optional(),
+  // Which way the trellis runs. Optional — when absent the indicator falls
+  // back to the bed's long axis (see autoTrellisDirection).
+  trellisDirection: z.enum(["horizontal", "vertical"]).optional(),
   notes: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),

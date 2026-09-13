@@ -10,7 +10,7 @@ import {
   type LightLevel,
 } from "@/lib/garden/schema";
 import { SPACE_TYPE_LABELS, LIGHT_LABELS } from "@/lib/garden/labels";
-import { polygonArea } from "@/lib/garden/geometry";
+import { autoTrellisDirection, polygonArea } from "@/lib/garden/geometry";
 import {
   Dialog,
   DialogClose,
@@ -60,6 +60,9 @@ export function SpaceDetailDialog({ space, onOpenChange, onSave }: SpaceDetailDi
   const [sun, setSun] = React.useState<LightLevel | "">("");
   const [capacityOverride, setCapacityOverride] = React.useState("");
   const [trellis, setTrellis] = React.useState(false);
+  const [trellisDirection, setTrellisDirection] = React.useState<
+    "horizontal" | "vertical"
+  >("vertical");
   const [notes, setNotes] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
 
@@ -70,6 +73,7 @@ export function SpaceDetailDialog({ space, onOpenChange, onSave }: SpaceDetailDi
       setSun(space.sun ?? "");
       setCapacityOverride(space.capacityOverride != null ? String(space.capacityOverride) : "");
       setTrellis(space.trellis ?? false);
+      setTrellisDirection(space.trellisDirection ?? autoTrellisDirection(space.shape));
       setNotes(space.notes ?? "");
       setError(null);
     }
@@ -85,6 +89,7 @@ export function SpaceDetailDialog({ space, onOpenChange, onSave }: SpaceDetailDi
       capacityOverride: co,
       sun: sun || undefined,
       trellis,
+      trellisDirection: trellis ? trellisDirection : undefined,
       notes: notes.trim() || undefined,
     };
     const result = spaceInputSchema.safeParse(candidate);
@@ -156,6 +161,20 @@ export function SpaceDetailDialog({ space, onOpenChange, onSave }: SpaceDetailDi
               Provides a trellis or vertical support
             </label>
           </Field>
+          {trellis ? (
+            <Field label="Trellis direction" full>
+              <select
+                className={selectClass}
+                value={trellisDirection}
+                onChange={(e) =>
+                  setTrellisDirection(e.target.value as "horizontal" | "vertical")
+                }
+              >
+                <option value="vertical">Vertical</option>
+                <option value="horizontal">Horizontal</option>
+              </select>
+            </Field>
+          ) : null}
           <Field label="Notes" full>
             <textarea
               className={cn(selectClass, "h-16 resize-y py-2")}

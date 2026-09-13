@@ -112,16 +112,19 @@ function TrellisMarker({
   minY,
   maxX,
   maxY,
+  direction,
 }: {
   minX: number;
   minY: number;
   maxX: number;
   maxY: number;
+  direction?: "horizontal" | "vertical";
 }) {
   const w = maxX - minX;
   const h = maxY - minY;
   if (w <= 0 || h <= 0) return null;
-  const vertical = h >= w; // run the line along the long axis
+  // Explicit direction wins; otherwise run the line along the long axis.
+  const vertical = direction ? direction === "vertical" : h >= w;
   const inset = Math.min(0.3, (vertical ? h : w) * 0.12); // pull the ends off the border
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
@@ -414,7 +417,13 @@ export function GardenCanvas({
                 onPointerLeave={() => setHoverId((id) => (id === space.id ? null : id))}
               />
               {space.trellis ? (
-                <TrellisMarker minX={bb.minX} minY={bb.minY} maxX={bb.maxX} maxY={bb.maxY} />
+                <TrellisMarker
+                  minX={bb.minX}
+                  minY={bb.minY}
+                  maxX={bb.maxX}
+                  maxY={bb.maxY}
+                  direction={space.trellisDirection}
+                />
               ) : null}
               {plants.map((d, i) => (
                 <PlantGlyph
