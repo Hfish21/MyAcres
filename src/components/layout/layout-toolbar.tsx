@@ -1,6 +1,16 @@
 "use client";
 
-import { Pencil, Copy, ClipboardPaste, Trash2, SquarePen, Check, X, Tag } from "lucide-react";
+import {
+  Pencil,
+  Copy,
+  ClipboardPaste,
+  Trash2,
+  SquarePen,
+  Check,
+  X,
+  Tag,
+  Sun,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,6 +26,8 @@ interface LayoutToolbarProps {
   hasClipboard: boolean;
   showNames: boolean;
   onToggleNames: () => void;
+  showSun: boolean;
+  onToggleSun: () => void;
   onEdit: () => void;
   onCopy: () => void;
   onPaste: () => void;
@@ -32,6 +44,8 @@ export function LayoutToolbar({
   hasClipboard,
   showNames,
   onToggleNames,
+  showSun,
+  onToggleSun,
   onEdit,
   onCopy,
   onPaste,
@@ -83,18 +97,26 @@ export function LayoutToolbar({
         </>
       )}
 
-      <Button
-        size="sm"
-        variant="secondary"
-        onClick={onToggleNames}
-        aria-pressed={showNames}
-        className={cn(
-          "ml-auto",
-          showNames && "border-rust bg-rust text-canvas hover:bg-rust",
-        )}
-      >
-        <Tag /> Names
-      </Button>
+      <div className="ml-auto flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={onToggleSun}
+          aria-pressed={showSun}
+          className={cn(showSun && "border-rust bg-rust text-canvas hover:bg-rust")}
+        >
+          <Sun /> Sun
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={onToggleNames}
+          aria-pressed={showNames}
+          className={cn(showNames && "border-rust bg-rust text-canvas hover:bg-rust")}
+        >
+          <Tag /> Names
+        </Button>
+      </div>
     </div>
   );
 }

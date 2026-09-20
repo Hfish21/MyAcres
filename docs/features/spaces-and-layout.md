@@ -13,15 +13,21 @@ garden to scale and see what's planted where, over time.
 ## Data — the `Space` entity (`src/lib/garden/schema.ts`)
 
 `name`, `type` (bed/row/container/ground/other), `shape` (`{ points: [{x,y}] }` — **absolute
-canvas coordinates in feet**), `capacityOverride?`, `sun?`, `notes?`, timestamps. Area is derived
-via `polygonArea`; there is **no separate position field** — the polygon's points are its place on
-the canvas.
+canvas coordinates in feet**), `capacityOverride?`, `sun?`, `trellis?` (whether the space provides
+a trellis / vertical support), `trellisDirection?` (`"horizontal"` | `"vertical"` — which way the
+trellis runs), `notes?`, timestamps. Area is derived via `polygonArea`; there is
+**no separate position field** — the polygon's points are its place on the canvas. `trellis` and
+`trellisDirection` are both optional (absent = false / auto), so existing `.homestead` files load
+unchanged (additive pattern, ADR-0008). When `trellisDirection` is absent the indicator falls back
+to the bed's long axis (`autoTrellisDirection`).
 
 ## Behavior
 
 ### `/spaces` — list (CRUD)
 Ledger table (name, type, size LxW, area, sun) with a rectangle-first add/edit dialog (enter
-length × width → a rectangle polygon), filters, and cascade-aware delete.
+length × width → a rectangle polygon), filters, and cascade-aware delete. The add/edit dialog and
+the layout **Space details** popup both carry a **"Has trellis"** toggle; when it's on, a
+**"Trellis direction"** picker (Vertical / Horizontal) appears, defaulting to the bed's long axis.
 
 ### `/layout` — the editor (`src/components/layout/`)
 An **SVG dot-grid canvas** (coordinates in feet). Desktop-editable, mobile read-only.
@@ -50,6 +56,24 @@ An **SVG dot-grid canvas** (coordinates in feet). Desktop-editable, mobile read-
   against any crop-colour foliage, including amber crops. Drag the date scrubber and the bed
   visibly matures, then lights up with ripe fruit as crops come ready. Glyphs degrade gracefully to
   small marks at high density.
+- **Trellis indicator:** spaces with `trellis === true` get a small, flat **trellis glyph** — a
+  short rust rail with a row of vertical hatch posts — drawn along the bed's top edge. It reads as
+  "vertical support here" at a glance, stays legible at canvas scale, and is deliberately basic (we
+  track only *that* a trellis exists, not its type). It sits above the plantings and doesn't
+  clobber the crop-density dots, the hover/selection nameplates, or the date scrubber.
+- **Sun / shade overlay:** a toolbar **"Sun"** toggle (lucide `Sun`, rust active state + `aria-pressed`,
+  sitting beside **Names** — the two are independent, both can be on at once) shades each bed by its
+  stored `sun` level so you can read at a glance where the shade falls. It's a **shadow overlay** graded
+  on the `sun` enum: **Full sun** = no overlay (open to the sky) → **Part sun** → **Part shade** →
+  **Shade** = darkest, using theme-aware `--shade-1/2/3` tokens (a warm-charcoal wash on light paper; a
+  wider-spread near-black wash after dark, tuned so the steps stay distinguishable in the coffee-dark
+  theme). A space with **no `sun` set** renders a faint diagonal **hatch** — clearly "unknown", never
+  implying a level that isn't there. The overlay is purely a static map of the stored level (**not** a
+  time-of-day sun simulation, ADR-0004): it sits *under* the trellis indicator, plant-density glyphs, and
+  nameplates, so it never fights them, and it's independent of the date scrubber. A compact **legend**
+  (mono/label style, Full sun → Shade + Not set) appears only while the toggle is on. The preference
+  persists per-viewer in `localStorage` (`myacres.layout.showSun`, best-effort try/catch, parallel to
+  `showNames`). The read-only small-screen fallback still renders any persisted overlay sensibly.
 - **Bed nameplate:** each space's name + derived area sit in a compact two-line pill **floating
   just above** the bed's top-left corner — kept clear of the plantings so the label is always
   legible (it previously sat centered, on top of the dots). The pill picks up the rust border when

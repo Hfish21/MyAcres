@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Check, MoreHorizontal, Pencil, Trash2, TriangleAlert } from "lucide-react";
 
 import type { Crop, Planting, PlantingStatus, Space } from "@/lib/garden/schema";
 import { PLANTING_STATUS_LABELS } from "@/lib/garden/labels";
@@ -80,6 +80,8 @@ export function PlantingTable({
           const space = spaceById(p.spaceId);
           const cap = crop && space ? capacity(crop, space) : null;
           const over = cap != null && p.quantity > cap;
+          const needsTrellis = !!crop?.needsTrellis;
+          const trellisOk = needsTrellis && !!space?.trellis;
           return (
             <TableRow key={p.id} className="group">
               <TableCell className="py-3">
@@ -89,7 +91,33 @@ export function PlantingTable({
                 ) : null}
               </TableCell>
               <TableCell className="hidden text-sm text-ink-2 sm:table-cell">
-                {space?.name ?? "—"}
+                <div className="flex items-center gap-1.5">
+                  <span>{space?.name ?? "—"}</span>
+                  {needsTrellis ? (
+                    <span
+                      className={cn(
+                        "inline-flex items-center",
+                        trellisOk ? "text-olive-ink" : "text-ochre-ink",
+                      )}
+                      title={
+                        trellisOk
+                          ? "Needs trellis — space has one"
+                          : "Needs trellis — space has none"
+                      }
+                    >
+                      {trellisOk ? (
+                        <Check className="size-3.5" />
+                      ) : (
+                        <TriangleAlert className="size-3.5" />
+                      )}
+                      <span className="sr-only">
+                        {trellisOk
+                          ? "Needs trellis — space has one"
+                          : "Needs trellis — space has none"}
+                      </span>
+                    </span>
+                  ) : null}
+                </div>
               </TableCell>
               <TableCell className="hidden font-mono text-sm tabular-nums text-ink-2 md:table-cell">
                 {p.startDate.slice(0, 10)}

@@ -51,6 +51,7 @@ const cropSchema = z.object({
   season: z.array(z.enum(["spring", "summer", "fall", "winter"])).min(1),
   tempRange: range.optional(),
   frostHardy: z.boolean(),
+  needsTrellis: z.boolean().optional(),
   water: z.enum(["low", "medium", "high"]),
   soilPh: range.optional(),
   yieldPerPlant: range.optional(),
@@ -105,6 +106,7 @@ const crops = [
     season: ["spring", "fall"],
     tempRange: r(65, 90),
     frostHardy: false,
+    needsTrellis: true, // indeterminate — needs tall support
     water: "medium",
     soilPh: r(6.0, 6.8),
     yieldPerPlant: r(8, 15),
@@ -128,6 +130,7 @@ const crops = [
     season: ["spring", "fall"],
     tempRange: r(65, 90),
     frostHardy: false,
+    needsTrellis: true, // indeterminate — needs strong support
     water: "medium",
     soilPh: r(6.0, 6.8),
     yieldPerPlant: r(12, 25),
@@ -223,6 +226,7 @@ const crops = [
     season: ["spring", "fall"],
     tempRange: r(65, 90),
     frostHardy: false,
+    needsTrellis: true, // vining cucumber — grow up a trellis
     water: "high",
     soilPh: r(6.0, 6.8),
     yieldPerPlant: r(10, 20),
@@ -245,6 +249,7 @@ const crops = [
     season: ["summer", "fall"],
     tempRange: r(70, 95),
     frostHardy: false,
+    needsTrellis: true, // vigorous vines — a strong trellis saves space
     water: "medium",
     soilPh: r(6.0, 6.8),
     yieldPerPlant: r(6, 15),
@@ -289,6 +294,7 @@ const crops = [
     season: ["spring", "summer"],
     tempRange: r(70, 95),
     frostHardy: false,
+    needsTrellis: true, // warm-season vine — needs a strong trellis
     water: "high",
     soilPh: r(6.0, 7.0),
     yieldPerPlant: r(5, 15),
@@ -334,6 +340,7 @@ const crops = [
     season: ["spring", "summer", "fall"],
     tempRange: r(70, 95),
     frostHardy: false,
+    needsTrellis: true, // climbing cowpea — grown on a tall trellis
     water: "medium",
     soilPh: r(6.0, 7.0),
     yieldPerPlant: r(1, 3),

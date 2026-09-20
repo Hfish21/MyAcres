@@ -70,6 +70,13 @@ export function boundingBox(poly: Polygon): BBox {
   };
 }
 
+// Default trellis direction for a space: run it along the bed's long axis.
+// Used both as the canvas fallback and as the dialog's initial pick.
+export function autoTrellisDirection(poly: Polygon): "horizontal" | "vertical" {
+  const bb = boundingBox(poly);
+  return bb.maxY - bb.minY >= bb.maxX - bb.minX ? "vertical" : "horizontal";
+}
+
 export function translatePolygon(poly: Polygon, dx: number, dy: number): Polygon {
   return { points: poly.points.map((p) => ({ x: p.x + dx, y: p.y + dy })) };
 }
