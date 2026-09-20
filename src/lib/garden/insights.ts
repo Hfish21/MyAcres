@@ -1,4 +1,5 @@
-import type { Crop, Planting, PlantingStatus } from "./schema";
+import type { Crop, Planting, PlantingStatus, Season, Space } from "./schema";
+import { polygonArea } from "./geometry";
 import { projectedDates } from "./schedule";
 
 // Derivations for the Plan view (the visual garden-over-time insights). All pure,
@@ -226,3 +227,156 @@ export const MILESTONE_LABELS: Record<MilestoneKind, string> = {
   transplant: "Transplant",
   harvest: "Harvest begins",
 };
+
+// --- month <-> planting crossfilter (harvest-coverage ↔ timeline) ---------
+
+/** Stable key for a month column (`YYYY-MM`), used to select/compare months. */
+export function monthKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+/** Does the harvest window of `planting` overlap the calendar month `m`? */
+function harvestOverlapsMonth(planting: Planting, crop: Crop, m: Date): boolean {
+  const seg = lifecycleSegments(planting, crop).find((s) => s.stage === "harvest");
+  if (!seg) return false;
+  const monthStart = m.getTime();
+  const monthEnd = addMonths(m, 1).getTime();
+  return seg.start.getTime() < monthEnd && seg.end.getTime() >= monthStart;
+}
+
+/** The plantings in their harvest window during month `m`, with their crop. */
+export function harvestingInMonth(
+  plantings: Planting[],
+  crops: Crop[],
+  m: Date,
+): Array<{ planting: Planting; crop: Crop }> {
+  const byId = cropMap(crops);
+  const out: Array<{ planting: Planting; crop: Crop }> = [];
+  for (const p of plantings) {
+    const crop = byId.get(p.cropId);
+    if (!crop) continue;
+    if (harvestOverlapsMonth(p, crop, m)) out.push({ planting: p, crop });
+  }
+  return out;
+}
+
+// --- per-crop-type harvest coverage grid ----------------------------------
+
+export interface CropCoverageRow {
+  cropName: string; // grouping key = the vegetable (crop.name)
+  family: Crop["family"];
+  months: boolean[]; // aligned to the window's months: in harvest that month?
+  total: number; // months in harvest (for sorting)
+}
+
+/** One row per distinct crop name, marking which months it's in harvest. */
+export function cropCoverageGrid(
+  plantings: Planting[],
+  crops: Crop[],
+  months: Date[],
+): CropCoverageRow[] {
+  const byId = cropMap(crops);
+  const rows = new Map<string, CropCoverageRow>();
+  for (const p of plantings) {
+    const crop = byId.get(p.cropId);
+    if (!crop) continue;
+    let row = rows.get(crop.name);
+    if (!row) {
+      row = {
+        cropName: crop.name,
+        family: crop.family,
+        months: months.map(() => false),
+        total: 0,
+      };
+      rows.set(crop.name, row);
+    }
+    months.forEach((m, i) => {
+      if (!row!.months[i] && harvestOverlapsMonth(p, crop, m)) row!.months[i] = true;
+    });
+  }
+  for (const row of rows.values()) row.total = row.months.filter(Boolean).length;
+  return [...rows.values()].sort((a, b) => a.cropName.localeCompare(b.cropName));
+}
+
+// --- projected food production per month -----------------------------------
+
+/** Per-month projected yield, aggregated by unit (spread over harvest window). */
+export function yieldByMonth(
+  plantings: Planting[],
+  crops: Crop[],
+  months: Date[],
+): Array<Map<string, number>> {
+  const byId = cropMap(crops);
+  const out: Array<Map<string, number>> = months.map(() => new Map());
+  for (const p of plantings) {
+    const crop = byId.get(p.cropId);
+    if (!crop || !crop.yieldPerPlant) continue;
+    const seg = lifecycleSegments(p, crop).find((s) => s.stage === "harvest");
+    if (!seg) continue;
+    const unit = crop.yieldUnit?.trim() || "units";
+    const perPlant = (crop.yieldPerPlant.min + crop.yieldPerPlant.max) / 2;
+    const total = perPlant * p.quantity;
+    const spanMs = seg.end.getTime() - seg.start.getTime();
+    if (spanMs <= 0) {
+      // Single-shot harvest: attribute all to the starting month.
+      const i = months.findIndex(
+        (m) => seg.start.getTime() >= m.getTime() && seg.start.getTime() < addMonths(m, 1).getTime(),
+      );
+      if (i >= 0) out[i].set(unit, (out[i].get(unit) ?? 0) + total);
+      continue;
+    }
+    // Spread the total evenly across the harvest window by days-in-month overlap.
+    months.forEach((m, i) => {
+      const monthStart = m.getTime();
+      const monthEnd = addMonths(m, 1).getTime();
+      const lo = Math.max(seg.start.getTime(), monthStart);
+      const hi = Math.min(seg.end.getTime(), monthEnd);
+      if (hi <= lo) return;
+      const share = ((hi - lo) / spanMs) * total;
+      out[i].set(unit, (out[i].get(unit) ?? 0) + share);
+    });
+  }
+  return out;
+}
+
+// --- space utilization over time -------------------------------------------
+
+/** Fraction (0–1) of total growing area occupied by a planting each month. */
+export function spaceUtilization(
+  plantings: Planting[],
+  crops: Crop[],
+  spaces: Space[],
+  months: Date[],
+): number[] {
+  const byId = cropMap(crops);
+  const spaceById = new Map(spaces.map((s) => [s.id, s]));
+  const totalArea = spaces.reduce((sum, s) => sum + polygonArea(s.shape), 0);
+  if (totalArea <= 0) return months.map(() => 0);
+
+  return months.map((m) => {
+    const mid = new Date((m.getTime() + addMonths(m, 1).getTime()) / 2);
+    const occupied = new Set<string>();
+    for (const p of plantings) {
+      const crop = byId.get(p.cropId);
+      if (!crop) continue;
+      if (plantingActiveOn(p, crop, mid)) occupied.add(p.spaceId);
+    }
+    let area = 0;
+    for (const id of occupied) {
+      const s = spaceById.get(id);
+      if (s) area += polygonArea(s.shape);
+    }
+    return clamp(area / totalArea, 0, 1);
+  });
+}
+
+// --- season bands (calendar → meteorological season) ----------------------
+
+/** Northern-hemisphere season for a month, for orientation bands on the timeline. */
+export function seasonOfMonth(m: Date): Season {
+  const mo = m.getMonth(); // 0-11
+  if (mo <= 1 || mo === 11) return "winter"; // Dec, Jan, Feb
+  if (mo <= 4) return "spring"; // Mar–May
+  if (mo <= 7) return "summer"; // Jun–Aug
+  return "fall"; // Sep–Nov
+}
