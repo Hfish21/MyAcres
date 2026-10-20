@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { CalendarDays, Clock, Grid3x3, Scale, Sprout } from "lucide-react";
+import { CalendarDays, Clock, Grid3x3, Map as MapIcon, Scale, Sprout } from "lucide-react";
 
 import { useHomestead } from "@/components/homestead-provider";
 import { Window } from "@/components/ui/window";
@@ -10,6 +10,7 @@ import { PlanSummary } from "@/components/plan/plan-summary";
 import { UpNext } from "@/components/plan/up-next";
 import { HarvestCoverage } from "@/components/plan/harvest-coverage";
 import { GardenTimeline } from "@/components/plan/garden-timeline";
+import { GardenMap } from "@/components/plan/garden-map";
 import { CropCoverageGrid } from "@/components/plan/crop-coverage-grid";
 import { FoodProduction } from "@/components/plan/food-production";
 import { SpaceUtilization } from "@/components/plan/space-utilization";
@@ -25,7 +26,7 @@ export default function PlanPage() {
   const spaces = store.spaces;
 
   // Shared month selection: the harvest-coverage strip and the crop grid set it;
-  // the timeline draws a marker line at the selected month. null = none.
+  // the timeline draws a marker line at it and the garden map jumps to it. null = none.
   const [selectedMonth, setSelectedMonth] = React.useState<string | null>(null);
 
   if (plantings.length === 0) {
@@ -62,6 +63,17 @@ export default function PlanPage() {
           />
         </Window>
       </div>
+
+      {spaces.length > 0 ? (
+        <Window title="Garden — Map" icon={<MapIcon />}>
+          <GardenMap
+            plantings={plantings}
+            crops={crops}
+            spaces={spaces}
+            selectedMonth={selectedMonth}
+          />
+        </Window>
+      ) : null}
 
       <Window title="Garden — Timeline" icon={<Sprout />} bodyPadding="tight">
         <GardenTimeline
