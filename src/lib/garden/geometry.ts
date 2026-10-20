@@ -98,16 +98,75 @@ export function pointInPolygon(pt: Point, poly: Polygon): boolean {
   return inside;
 }
 
-/** Grid points inside a polygon at the given spacing (ft), row-major, capped at `max`. */
-export function packPositions(poly: Polygon, spacingFt: number, max: number): Point[] {
+/**
+ * `count` evenly spread points inside `rect`, kept to those inside `clip`. Columns
+ * come from the plant spacing (ft); rows grow until the grid fits the rect height,
+ * and a short last row is centred.
+ */
+export function distributeInRect(
+  rect: BBox,
+  clip: Polygon,
+  spacingFt: number,
+  count: number,
+): Point[] {
+  if (count <= 0) return [];
   const s = Math.max(0.3, spacingFt);
-  const bb = boundingBox(poly);
+  const w = Math.max(0, rect.maxX - rect.minX);
+  const h = Math.max(0, rect.maxY - rect.minY);
+  if (w <= 0 || h <= 0) return [];
+  let cols = Math.max(1, Math.min(count, Math.round(w / s)));
+  let rows = Math.ceil(count / cols);
+  while (rows * s > h && cols < count) {
+    cols += 1;
+    rows = Math.ceil(count / cols);
+  }
+  const cw = w / cols;
+  const rh = h / rows;
   const out: Point[] = [];
-  for (let y = bb.minY + s / 2; y <= bb.maxY && out.length < max; y += s) {
-    for (let x = bb.minX + s / 2; x <= bb.maxX && out.length < max; x += s) {
-      if (pointInPolygon({ x, y }, poly)) out.push({ x, y });
+  for (let r = 0; r < rows && out.length < count; r++) {
+    const inRow = Math.min(cols, count - r * cols);
+    const offset = ((cols - inRow) / 2) * cw;
+    const y = rect.minY + (r + 0.5) * rh;
+    for (let c = 0; c < inRow && out.length < count; c++) {
+      const pt = { x: rect.minX + offset + (c + 0.5) * cw, y };
+      if (pointInPolygon(pt, clip)) out.push(pt);
     }
   }
+  return out;
+}
+
+/** Which way crop blocks stack: "y" = horizontal bands top-to-bottom, "x" = vertical strips. */
+export type BlockAxis = "x" | "y";
+
+/**
+ * Split a bed's bounding box into one block per item, sized by weight, stacked
+ * along `axis` (default: the bed's long axis). The last block absorbs rounding.
+ */
+export function partitionBlocks<T>(
+  poly: Polygon,
+  items: Array<{ item: T; weight: number }>,
+  axis?: BlockAxis,
+): Array<{ item: T; rect: BBox; axis: BlockAxis }> {
+  const bb = boundingBox(poly);
+  const live = items.filter((i) => i.weight > 0);
+  const total = live.reduce((s, i) => s + i.weight, 0);
+  if (total <= 0 || live.length === 0) return [];
+  const w = bb.maxX - bb.minX;
+  const h = bb.maxY - bb.minY;
+  const ax: BlockAxis = axis ?? (h >= w ? "y" : "x");
+  const span = ax === "y" ? h : w;
+  const out: Array<{ item: T; rect: BBox; axis: BlockAxis }> = [];
+  let at = ax === "y" ? bb.minY : bb.minX;
+  live.forEach((it, idx) => {
+    const size =
+      idx === live.length - 1 ? (ax === "y" ? bb.maxY : bb.maxX) - at : span * (it.weight / total);
+    const rect =
+      ax === "y"
+        ? { minX: bb.minX, maxX: bb.maxX, minY: at, maxY: at + size }
+        : { minX: at, maxX: at + size, minY: bb.minY, maxY: bb.maxY };
+    out.push({ item: it.item, rect, axis: ax });
+    at += size;
+  });
   return out;
 }
 

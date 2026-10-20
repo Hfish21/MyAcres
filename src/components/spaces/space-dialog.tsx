@@ -45,6 +45,7 @@ interface FormState {
   sun: LightLevel | "";
   trellis: boolean;
   trellisDirection: "horizontal" | "vertical";
+  rowDirection: "horizontal" | "vertical" | "";
   notes: string;
 }
 
@@ -58,6 +59,7 @@ function emptyForm(): FormState {
     sun: "",
     trellis: false,
     trellisDirection: "vertical",
+    rowDirection: "",
     notes: "",
   };
 }
@@ -73,6 +75,7 @@ function fromSpace(s: Space): FormState {
     sun: s.sun ?? "",
     trellis: s.trellis ?? false,
     trellisDirection: s.trellisDirection ?? autoTrellisDirection(s.shape),
+    rowDirection: s.rowDirection ?? "",
     notes: s.notes ?? "",
   };
 }
@@ -144,6 +147,7 @@ export function SpaceDialog({ open, onOpenChange, space, onSave }: SpaceDialogPr
       sun: form.sun || undefined,
       trellis: form.trellis,
       trellisDirection: form.trellis ? form.trellisDirection : undefined,
+      rowDirection: form.rowDirection || undefined,
       notes: form.notes.trim() || undefined,
     };
     const result = spaceInputSchema.safeParse(candidate);
@@ -269,6 +273,17 @@ export function SpaceDialog({ open, onOpenChange, space, onSave }: SpaceDialogPr
               </select>
             </Field>
           ) : null}
+          <Field label="Row direction" full>
+            <select
+              className={selectClass}
+              value={form.rowDirection}
+              onChange={(e) => set("rowDirection", e.target.value as FormState["rowDirection"])}
+            >
+              <option value="">Auto (long axis)</option>
+              <option value="horizontal">Horizontal rows</option>
+              <option value="vertical">Vertical rows</option>
+            </select>
+          </Field>
           <Field label="Notes" full>
             <textarea
               className={cn(selectClass, "h-20 resize-y py-2")}
