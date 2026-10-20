@@ -37,8 +37,8 @@ Shell (core)            Garden module
 ### Garden module (`src/lib/garden/`, `src/components/{crops,spaces,plantings,plan,layout}/`)
 - `schema.ts` — Zod schemas for **Crop**, **Space**, **Planting** (+ the garden module slice);
   the single source of truth (TS types via `z.infer`).
-- `geometry.ts` — `polygonArea`, `capacity`, polygon ops (`pointInPolygon`, `packPositions`,
-  `translatePolygon`, …). `schedule.ts` — `projectedDates` (germination/transplant/harvest
+- `geometry.ts` — `polygonArea`, `capacity`, polygon ops (`pointInPolygon`, `partitionBlocks`,
+  `distributeInRect`, `translatePolygon`, …). `schedule.ts` — `projectedDates` (germination/transplant/harvest
   ranges). `insights.ts` — timeline window, lifecycle segments, harvest coverage, upcoming
   milestones, `plantingActiveOn`. `labels.ts`, `colors.ts` — display helpers.
 - Five views (see [CLAUDE.md](../../CLAUDE.md) for the route map): **Plan** (visual dashboard),
@@ -51,7 +51,7 @@ Shell (core)            Garden module
 - **Planting** — a crop in a space on a start date, with quantity, lifecycle `status`, and
   `events[]` checkpoints. [ADR-0009]
 - **Derived, never stored:** `projectedDates`, `capacity`/fits, `lifecycleSegments` — these power
-  the Plan timeline, the Layout scrubber, and the capacity warnings.
+  the Plan timeline, the Garden Map scrubber, and the capacity warnings.
 
 ## The `.homestead` file (as built — [ADR-0008](../decisions/0008-homestead-file-schema.md))
 

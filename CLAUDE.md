@@ -33,10 +33,11 @@ are all in place. Per-feature detail lives in [`docs/features/`](docs/features/)
   Explains what MyAcres is, how the file workflow works, and the feature set; CTAs into `/plan`.
   Everything below lives under the `(app)` route group (shell + provider). ([ADR-0010](docs/decisions/0010-landing-page-and-route-groups.md))
 - `/plan` — **Plan** (app home): a visual, derived dashboard — garden timeline (Gantt), "Up Next"
-  milestones, a harvest-coverage strip, and summary stats. Read-only.
-- `/layout` — **Layout**: an interactive SVG dot-grid canvas. Draw/arrange/copy growing spaces,
-  see plantings as crop-colored density dots, and a **date scrubber** that fills/empties beds
-  across the season.
+  milestones, a harvest-coverage strip, summary stats, and a **Garden Map** (the layout canvas,
+  read-only, with a date scrubber and season/family/crop filters). Read-only.
+- `/layout` — **Layout**: an interactive SVG dot-grid canvas. Draw/arrange/copy growing spaces
+  and see today's plantings as per-crop blocks (stacked by each bed's row direction). The season
+  view lives in the Plan page's Garden Map.
 - `/crops` — **Crops**: the crop library (CRUD) — produce-type profiles (timing, spacing, …).
 - `/spaces` — **Spaces**: growing-area list (CRUD).
 - `/plantings` — **Plantings**: a crop in a space on a date; shows the projected schedule +
@@ -47,7 +48,7 @@ are all in place. Per-feature detail lives in [`docs/features/`](docs/features/)
   `file-io` (File System Access + download fallback + IndexedDB autosave), `store`
   (`HomesteadStore`, CRUD + cascade-delete, `getStore()` singleton).
 - `src/lib/garden/` — `schema` (Zod: Crop/Space/Planting, the single source of truth), `labels`,
-  `geometry` (area, capacity, polygon ops, packing), `schedule` (`projectedDates`), `insights`
+  `geometry` (area, capacity, polygon ops, crop blocks), `schedule` (`projectedDates`), `insights`
   (timeline window, lifecycle segments, harvest coverage, upcoming milestones), `colors`.
 - `src/components/homestead/` — provider, app-shell, top-bar (nav), file-controls.
 - `src/components/{ui,crops,spaces,plantings,plan,layout}/` — the `Window` primitive + reskinned
