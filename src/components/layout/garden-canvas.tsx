@@ -6,12 +6,14 @@ import type { Crop, LightLevel, Planting, Point, Polygon, Space } from "@/lib/ga
 import { LIGHT_LABELS } from "@/lib/garden/labels";
 import {
   boundingBox,
-  packPositions,
+  distributeInRect,
+  partitionBlocks,
   plantSpacingFt,
   polygonArea,
   snap,
   translatePolygon,
 } from "@/lib/garden/geometry";
+import type { BBox, BlockAxis } from "@/lib/garden/geometry";
 import { stageOn } from "@/lib/garden/insights";
 import type { LifecycleStage } from "@/lib/garden/insights";
 import { cn } from "@/lib/utils";
@@ -98,8 +100,8 @@ function dist(a: Point, b: Point): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
-// Shrink a polygon toward its centroid so packed dots keep a margin off the
-// border (purely cosmetic — gives each bed some breathing room).
+// Shrink a polygon toward its centroid so plants keep a margin off the border
+// (purely cosmetic — gives each bed some breathing room).
 function insetPolygon(poly: Polygon, ratio: number): Polygon {
   const c = centroid(poly);
   return {
@@ -165,6 +167,60 @@ function PlantGlyph({
       {stage === "harvest" ? (
         <circle cx={0} cy={-0.46} r={0.46} className="fill-ripe stroke-canvas" strokeWidth={0.09} />
       ) : null}
+    </g>
+  );
+}
+
+// One crop's share of a bed: its block rect, the plants laid out inside it, and
+// the stage of its largest planting (which drives the glyphs).
+interface CropBlock {
+  crop: Crop;
+  color: string;
+  stage: LifecycleStage;
+  count: number;
+  rect: BBox;
+  axis: BlockAxis;
+  points: Point[];
+  r: number;
+}
+
+// A small "Crop ×N" tag tucked into a block's top-left corner, with a colour
+// swatch. Skipped when it wouldn't fit inside the block, so small beds stay clean.
+function BlockLabel({ block, size }: { block: CropBlock; size: number }) {
+  const text = `${block.crop.name} ×${block.count}`;
+  const pad = size * 0.4;
+  const sw = size * 0.9;
+  const gap = size * 0.32;
+  const w = sw + gap + text.length * size * 0.56 + pad * 2;
+  const h = Math.max(sw, size) + pad * 1.4;
+  const x = block.rect.minX + 0.18;
+  const y = block.rect.minY + 0.18;
+  if (w > block.rect.maxX - block.rect.minX + 0.4 || h > block.rect.maxY - block.rect.minY + 0.4) {
+    return null;
+  }
+  return (
+    <g pointerEvents="none" transform={`translate(${x}, ${y})`}>
+      <rect
+        x={0}
+        y={0}
+        width={w}
+        height={h}
+        rx={0.25}
+        className="fill-panel stroke-line"
+        fillOpacity={0.9}
+        strokeWidth={1}
+        vectorEffect="non-scaling-stroke"
+      />
+      <rect x={pad} y={(h - sw) / 2} width={sw} height={sw} rx={0.12} fill={block.color} />
+      <text
+        x={pad + sw + gap}
+        y={h / 2}
+        dominantBaseline="central"
+        fontSize={size}
+        className="fill-ink font-mono"
+      >
+        {text}
+      </text>
     </g>
   );
 }
@@ -276,6 +332,10 @@ interface GardenCanvasProps {
   onAddDraftPoint: (pt: Point) => void;
   onCloseDraft: () => void;
   onMoveSpace: (id: string, polygon: Polygon) => void;
+  /** Spotlight one crop: its blocks brighten, every other crop fades back. */
+  highlightCropId?: string | null;
+  /** When set, crop blocks are clickable and report their crop id. */
+  onBlockClick?: (cropId: string) => void;
 }
 
 export function GardenCanvas({
@@ -294,6 +354,8 @@ export function GardenCanvas({
   onAddDraftPoint,
   onCloseDraft,
   onMoveSpace,
+  highlightCropId,
+  onBlockClick,
 }: GardenCanvasProps) {
   const svgRef = React.useRef<SVGSVGElement>(null);
   const cropById = React.useMemo(() => new Map(crops.map((c) => [c.id, c])), [crops]);
@@ -339,17 +401,17 @@ export function GardenCanvas({
   }
 
   function handleBackgroundDown(e: React.PointerEvent) {
-    if (!editable) return;
-    const pt = toFeet(e);
-    if (!pt) return;
     if (mode === "draw") {
+      if (!editable) return;
+      const pt = toFeet(e);
+      if (!pt) return;
       if (draftPoints.length >= 3 && dist(pt, draftPoints[0]) <= CLOSE_DIST) {
         onCloseDraft();
       } else {
         onAddDraftPoint(pt);
       }
     } else {
-      onSelect(null); // clicked empty space → deselect
+      onSelect(null); // clicked empty space → deselect (read-only canvases too)
     }
   }
 
@@ -385,33 +447,69 @@ export function GardenCanvas({
     return dragPreview?.id === space.id ? dragPreview.polygon : space.shape;
   }
 
-  function plantsFor(
-    space: Space,
-  ): Array<{ pt: Point; color: string; r: number; stage: LifecycleStage }> {
+  // Each crop in a bed gets its own block, sized by the room its plants need and
+  // stacked along the bed's row direction (or its long axis), so a bed reads as
+  // rows of crops rather than one mixed scatter.
+  function blocksFor(space: Space): CropBlock[] {
     const items = plantings
       .filter((p) => p.spaceId === space.id)
-      .map((p) => ({ p, crop: cropById.get(p.cropId), stage: undefined as LifecycleStage | null | undefined }))
-      .filter((x): x is { p: Planting; crop: Crop; stage: undefined } => !!x.crop)
+      .map((p) => ({ p, crop: cropById.get(p.cropId) }))
+      .filter((x): x is { p: Planting; crop: Crop } => !!x.crop)
       .map((x) => ({ ...x, stage: stageOn(x.p, x.crop, asOfDate) }))
       .filter((x): x is { p: Planting; crop: Crop; stage: LifecycleStage } => x.stage !== null);
     if (items.length === 0) return [];
-    const avgSpacing =
-      items.reduce((s, x) => s + plantSpacingFt(x.crop), 0) / items.length;
-    const total = items.reduce((s, x) => s + x.p.quantity, 0);
-    // Pack into a slightly inset bed so plants don't crowd the border.
-    const grid = packPositions(insetPolygon(shapeOf(space), 0.86), avgSpacing, total);
-    const r = Math.min(0.46, Math.max(0.18, avgSpacing * 0.37)); // ~15% larger glyphs
-    const out: Array<{ pt: Point; color: string; r: number; stage: LifecycleStage }> = [];
-    let i = 0;
+
+    // One group per crop; the largest planting decides the group's stage.
+    const byCrop = new Map<
+      string,
+      { crop: Crop; count: number; stage: LifecycleStage; topQty: number }
+    >();
     for (const { p, crop, stage } of items) {
-      const n = Math.min(p.quantity, grid.length - i);
-      const color = cropColors.get(crop.id) ?? "#5A6B3B";
-      for (let k = 0; k < n; k++) {
-        out.push({ pt: grid[i++], color, r, stage });
+      const g = byCrop.get(crop.id);
+      if (!g) {
+        byCrop.set(crop.id, { crop, count: p.quantity, stage, topQty: p.quantity });
+      } else {
+        g.count += p.quantity;
+        if (p.quantity > g.topQty) {
+          g.topQty = p.quantity;
+          g.stage = stage;
+        }
       }
-      if (i >= grid.length) break;
     }
-    return out;
+    const groups = [...byCrop.values()].sort((a, b) => a.crop.id.localeCompare(b.crop.id));
+
+    const poly = shapeOf(space);
+    const clip = insetPolygon(poly, 0.9);
+    const axis: BlockAxis | undefined =
+      space.rowDirection === "horizontal"
+        ? "y"
+        : space.rowDirection === "vertical"
+          ? "x"
+          : undefined;
+    return partitionBlocks(
+      poly,
+      groups.map((g) => ({ item: g, weight: g.count * plantSpacingFt(g.crop) ** 2 })),
+      axis,
+    ).map(({ item, rect, axis: ax }) => {
+      const spacing = plantSpacingFt(item.crop);
+      const pad = Math.min(0.25, spacing * 0.4);
+      const inner = {
+        minX: rect.minX + pad,
+        maxX: rect.maxX - pad,
+        minY: rect.minY + pad,
+        maxY: rect.maxY - pad,
+      };
+      return {
+        crop: item.crop,
+        color: cropColors.get(item.crop.id) ?? "#5A6B3B",
+        stage: item.stage,
+        count: item.count,
+        rect,
+        axis: ax,
+        points: distributeInRect(inner, clip, spacing, item.count),
+        r: Math.min(0.46, Math.max(0.16, spacing * 0.37)),
+      };
+    });
   }
 
   const draftWithHover =
@@ -470,7 +568,10 @@ export function GardenCanvas({
           // Labels de-clutter the canvas: hidden by default, revealed on hover,
           // always shown for the selected bed, or all-on via the toolbar toggle.
           const showLabel = showAllNames || selected || space.id === hoverId;
-          const plants = plantsFor(space);
+          const blocks = blocksFor(space);
+          const clipId = `bedclip-${space.id}`;
+          const dimmed = (b: CropBlock) => highlightCropId != null && b.crop.id !== highlightCropId;
+          const lit = (b: CropBlock) => highlightCropId != null && b.crop.id === highlightCropId;
 
           // Nameplate floats just above the bed's top-left corner: name over a
           // muted area line, stacked so the pill stays narrow (won't run into a
@@ -490,6 +591,11 @@ export function GardenCanvas({
 
           return (
             <g key={space.id} style={{ pointerEvents: mode === "draw" ? "none" : "auto" }}>
+              <defs>
+                <clipPath id={clipId}>
+                  <polygon points={pointsStr(poly)} />
+                </clipPath>
+              </defs>
               <polygon
                 points={pointsStr(poly)}
                 className={cn(
@@ -504,6 +610,23 @@ export function GardenCanvas({
                 onPointerEnter={() => setHoverId(space.id)}
                 onPointerLeave={() => setHoverId((id) => (id === space.id ? null : id))}
               />
+              {/* Block tint: each crop's share of the bed, faintly washed in its
+                  colour and clipped to the bed outline. */}
+              {blocks.length > 0 ? (
+                <g clipPath={`url(#${clipId})`} pointerEvents="none">
+                  {blocks.map((b, i) => (
+                    <rect
+                      key={i}
+                      x={b.rect.minX}
+                      y={b.rect.minY}
+                      width={b.rect.maxX - b.rect.minX}
+                      height={b.rect.maxY - b.rect.minY}
+                      fill={b.color}
+                      opacity={dimmed(b) ? 0.04 : lit(b) ? 0.22 : 0.1}
+                    />
+                  ))}
+                </g>
+              ) : null}
               {/* Sun/shade overlay: a shadow graded by the bed's sun level (drawn
                   under the trellis, plants, and nameplate so it never fights them).
                   full-sun = no overlay; unset = faint hatch (not a solid tint). */}
@@ -526,15 +649,36 @@ export function GardenCanvas({
                   direction={space.trellisDirection}
                 />
               ) : null}
-              {plants.map((d, i) => (
-                <PlantGlyph
-                  key={i}
-                  x={d.pt.x}
-                  y={d.pt.y}
-                  r={d.r}
-                  color={d.color}
-                  stage={d.stage}
-                />
+              {blocks.map((b, i) => (
+                <g key={i} opacity={dimmed(b) ? 0.18 : 1}>
+                  {b.points.map((pt, k) => (
+                    <PlantGlyph key={k} x={pt.x} y={pt.y} r={b.r} color={b.color} stage={b.stage} />
+                  ))}
+                </g>
+              ))}
+              {onBlockClick ? (
+                <g clipPath={`url(#${clipId})`}>
+                  {blocks.map((b, i) => (
+                    <rect
+                      key={`hit-${i}`}
+                      x={b.rect.minX}
+                      y={b.rect.minY}
+                      width={b.rect.maxX - b.rect.minX}
+                      height={b.rect.maxY - b.rect.minY}
+                      fill="transparent"
+                      className="cursor-pointer"
+                      onPointerDown={(e) => {
+                        e.stopPropagation();
+                        onBlockClick(b.crop.id);
+                      }}
+                    />
+                  ))}
+                </g>
+              ) : null}
+              {blocks.map((b, i) => (
+                <g key={`bl-${i}`} opacity={dimmed(b) ? 0.3 : 1}>
+                  <BlockLabel block={b} size={labelSize * 0.62} />
+                </g>
               ))}
 
               {/* Nameplate (name pill + area), kept clear of the plantings.

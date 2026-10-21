@@ -100,6 +100,9 @@ export const spaceSchema = z.object({
   // Which way the trellis runs. Optional — when absent the indicator falls
   // back to the bed's long axis (see autoTrellisDirection).
   trellisDirection: z.enum(["horizontal", "vertical"]).optional(),
+  // Which way the crop blocks (rows) run on the canvas. Optional — when absent
+  // blocks stack along the bed's long axis (see partitionBlocks).
+  rowDirection: z.enum(["horizontal", "vertical"]).optional(),
   notes: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),

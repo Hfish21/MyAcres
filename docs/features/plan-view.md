@@ -34,6 +34,14 @@ visualizes; it does not prescribe.
 6. **Space Utilization** (`space-utilization.tsx`) — **% of total growing area occupied** each
    month; low bars are open capacity to plant into.
 7. **Summary stats** (`plan-summary.tsx`) — plantings, in-harvest-now, spaces, growing area.
+8. **Garden Map** (`garden-map.tsx`) — the layout canvas, **read-only**, shown once there are
+   spaces. A **date scrubber** (`date-scrubber.tsx`) with season bands, month ticks, and a today
+   caret moves it through the season, so beds **fill, empty, and swap crops** (`plantingActiveOn`).
+   Filters: multi-select **season** and **family** (family chips carry the family colour; shown only
+   when more than one family is present), a single **crop** select ("All crops"), a **Names**
+   toggle, and Clear. **Clicking a crop's block or its legend entry spotlights that crop** across
+   every bed (others fade back); click again to clear. Picking a month in Harvest Coverage or
+   Harvest by Crop jumps the map to mid-month.
 
 ## Derived helpers (`src/lib/garden/insights.ts`)
 `lifecycleSegments`, `timelineWindow` + `positionPct`, `harvestCoverage`, `upcomingMilestones`,
@@ -43,7 +51,8 @@ Still a *visualizer* of entered data, not a predictor/advisor (ADR-0004).
 
 ## Component
 `src/app/(app)/plan/page.tsx` composes the pieces in Paper Desktop `Window`s and owns the shared
-`selectedMonth` crossfilter between Harvest Coverage, the Timeline, and Harvest by Crop.
+`selectedMonth` crossfilter between Harvest Coverage, the Timeline, Harvest by Crop, and the
+Garden Map. Timeline family chips show the family colour (`familyColor`).
 
 ## Out of scope / future
 Click a bar to open the planting, drag to reschedule; a real Tasks system fed by the milestones;

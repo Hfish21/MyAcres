@@ -15,11 +15,14 @@ garden to scale and see what's planted where, over time.
 `name`, `type` (bed/row/container/ground/other), `shape` (`{ points: [{x,y}] }` — **absolute
 canvas coordinates in feet**), `capacityOverride?`, `sun?`, `trellis?` (whether the space provides
 a trellis / vertical support), `trellisDirection?` (`"horizontal"` | `"vertical"` — which way the
-trellis runs), `notes?`, timestamps. Area is derived via `polygonArea`; there is
+trellis runs), `rowDirection?` (`"horizontal"` | `"vertical"` — which way the crop rows run on
+the canvas), `notes?`, timestamps. Area is derived via `polygonArea`; there is
 **no separate position field** — the polygon's points are its place on the canvas. `trellis` and
 `trellisDirection` are both optional (absent = false / auto), so existing `.homestead` files load
 unchanged (additive pattern, ADR-0008). When `trellisDirection` is absent the indicator falls back
-to the bed's long axis (`autoTrellisDirection`).
+to the bed's long axis (`autoTrellisDirection`). `rowDirection` is optional the same way: absent =
+**Auto (long axis)**. Both the `/spaces` dialog and the layout **Space details** popup carry a
+**Row direction** select (Auto / Horizontal rows / Vertical rows), and copy/paste/move preserve it.
 
 ## Behavior
 
@@ -47,14 +50,19 @@ An **SVG dot-grid canvas** (coordinates in feet). Desktop-editable, mobile read-
   **Cmd/Ctrl+V** pastes; both fire only on the editable canvas in Select mode, and are suppressed
   while typing in a field or when text is selected (native copy wins). *Multi-select copy is future
   work — copy is single-space for now.*
-- **Plant density & maturity:** each space fills with **per-crop glyphs**, packed at the crop's
-  spacing up to capacity (`packPositions` + `pointInPolygon`) — organizational, not pixel-accurate,
-  packed into a slightly **inset** polygon to keep a margin off the border. Each glyph reflects the
-  planting's **lifecycle stage on the scrubbed date** (`stageOn`): *establish* = a small seed,
+- **Crop blocks:** each crop in a bed gets its own **block** — a band of the bed sized by the room
+  its plants need (`count × spacing²`), stacked along the bed's **row direction** (or its long axis
+  when Auto) via `partitionBlocks`. Each block is faintly tinted in the crop's colour (clipped to
+  the bed outline) and carries a small **"Crop ×N" tag** when it fits. Plants are spread evenly
+  inside their block (`distributeInRect`), kept inside a slightly **inset** polygon so they hold a
+  margin off the border — organizational, not pixel-accurate. A crop's plantings in one bed merge
+  into one block; the largest planting sets the block's stage.
+- **Plant maturity:** each glyph reflects the crop's **lifecycle stage on the canvas date**
+  (`stageOn`): *establish* = a small seed,
   *growing* = a leafy crop-coloured three-leaf sprout, *harvest* = the sprout with a **vivid
   ripe-red fruit** (the `ripe` token, with a theme-background ring) nestled in it — chosen to pop
-  against any crop-colour foliage, including amber crops. Drag the date scrubber and the bed
-  visibly matures, then lights up with ripe fruit as crops come ready. Glyphs degrade gracefully to
+  against any crop-colour foliage, including amber crops. On the Plan page's **Garden Map**, drag the
+  date scrubber and the bed visibly matures, then lights up with ripe fruit as crops come ready. Glyphs degrade gracefully to
   small marks at high density.
 - **Trellis indicator:** spaces with `trellis === true` get a small, flat **trellis glyph** — a
   short rust rail with a row of vertical hatch posts — drawn along the bed's top edge. It reads as
@@ -90,12 +98,14 @@ An **SVG dot-grid canvas** (coordinates in feet). Desktop-editable, mobile read-
   minimum / origin anchoring, so there's little dead space), capped at `72vh` tall. A small
   **scale bar** anchored bottom-left states the grid's foot scale. Beds show a hover fill in
   Select mode.
-- **Date scrubber:** an as-of slider; only plantings whose lifecycle spans that date are shown, so
-  beds **fill, empty, and swap crops across the season** (`plantingActiveOn`).
+- **Today only:** Layout is the editor, so beds show **what's planted today**. A note under the
+  canvas links to the **Garden Map on the Plan page**, which reuses this canvas read-only with the
+  date scrubber and season / family / crop filters (see [plan-view.md](plan-view.md)).
 
 ## Components & helpers
-`src/app/{spaces,layout}/page.tsx`; `src/components/spaces/*`, `src/components/layout/{garden-canvas,layout-toolbar,date-scrubber,space-detail-dialog}.tsx`;
-geometry in `src/lib/garden/geometry.ts`, colors in `colors.ts`.
+`src/app/{spaces,layout}/page.tsx`; `src/components/spaces/*`, `src/components/layout/{garden-canvas,layout-toolbar,space-detail-dialog}.tsx`;
+geometry in `src/lib/garden/geometry.ts`, colors in `colors.ts` (crop colours are grouped by
+family: each family owns a hue, crops within it step in lightness).
 
 ## Out of scope / future
 Editing a polygon's vertices after drawing (delete + redraw for now), true curves/ovals,

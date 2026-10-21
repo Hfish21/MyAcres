@@ -63,6 +63,9 @@ export function SpaceDetailDialog({ space, onOpenChange, onSave }: SpaceDetailDi
   const [trellisDirection, setTrellisDirection] = React.useState<
     "horizontal" | "vertical"
   >("vertical");
+  const [rowDirection, setRowDirection] = React.useState<"horizontal" | "vertical" | "">(
+    "",
+  );
   const [notes, setNotes] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
 
@@ -74,6 +77,7 @@ export function SpaceDetailDialog({ space, onOpenChange, onSave }: SpaceDetailDi
       setCapacityOverride(space.capacityOverride != null ? String(space.capacityOverride) : "");
       setTrellis(space.trellis ?? false);
       setTrellisDirection(space.trellisDirection ?? autoTrellisDirection(space.shape));
+      setRowDirection(space.rowDirection ?? "");
       setNotes(space.notes ?? "");
       setError(null);
     }
@@ -90,6 +94,7 @@ export function SpaceDetailDialog({ space, onOpenChange, onSave }: SpaceDetailDi
       sun: sun || undefined,
       trellis,
       trellisDirection: trellis ? trellisDirection : undefined,
+      rowDirection: rowDirection || undefined,
       notes: notes.trim() || undefined,
     };
     const result = spaceInputSchema.safeParse(candidate);
@@ -175,6 +180,17 @@ export function SpaceDetailDialog({ space, onOpenChange, onSave }: SpaceDetailDi
               </select>
             </Field>
           ) : null}
+          <Field label="Row direction" full>
+            <select
+              className={selectClass}
+              value={rowDirection}
+              onChange={(e) => setRowDirection(e.target.value as "horizontal" | "vertical" | "")}
+            >
+              <option value="">Auto (long axis)</option>
+              <option value="horizontal">Horizontal rows</option>
+              <option value="vertical">Vertical rows</option>
+            </select>
+          </Field>
           <Field label="Notes" full>
             <textarea
               className={cn(selectClass, "h-16 resize-y py-2")}

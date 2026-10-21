@@ -16,6 +16,8 @@ import {
   type LifecycleStage,
 } from "@/lib/garden/insights";
 import { projectedDates, fmtDate, fmtDateRange } from "@/lib/garden/schedule";
+import { familyColor } from "@/lib/garden/colors";
+import { Chip } from "./chip";
 import { cn } from "@/lib/utils";
 
 const STAGE_STYLE: Record<LifecycleStage, string> = {
@@ -43,32 +45,6 @@ function Swatch({ stage }: { stage: LifecycleStage }) {
       <span className={cn("size-3 rounded-[2px]", STAGE_STYLE[stage])} />
       <span className="text-xs text-ink-3">{STAGE_LABEL[stage]}</span>
     </span>
-  );
-}
-
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "rounded-full border px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide transition-colors",
-        active
-          ? "border-rust bg-rust/10 text-rust"
-          : "border-line text-ink-3 hover:border-ink-3 hover:text-ink-2",
-      )}
-    >
-      {children}
-    </button>
   );
 }
 
@@ -452,6 +428,11 @@ export function GardenTimeline({
                 active={familyFilter.has(f)}
                 onClick={() => setFamilyFilter((prev) => toggle(prev, f))}
               >
+                <span
+                  aria-hidden
+                  className="mr-1 inline-block size-2 rounded-full align-middle"
+                  style={{ backgroundColor: familyColor(f) }}
+                />
                 {FAMILY_LABELS[f]}
               </Chip>
             ))}

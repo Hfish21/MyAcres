@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { familyColor } from "@/lib/garden/colors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,7 +63,14 @@ export function CropTable({ crops, onEdit, onDelete }: CropTableProps) {
               {c.variety ? <div className="text-xs text-ink-3">{c.variety}</div> : null}
             </TableCell>
             <TableCell className="hidden sm:table-cell">
-              <Badge>{FAMILY_LABELS[c.family]}</Badge>
+              <Badge>
+                <span
+                  aria-hidden
+                  className="mr-1.5 inline-block size-2 shrink-0 rounded-full align-middle"
+                  style={{ backgroundColor: familyColor(c.family) }}
+                />
+                {FAMILY_LABELS[c.family]}
+              </Badge>
             </TableCell>
             <TableCell className="hidden md:table-cell">
               <Badge variant="done">{PLANTING_METHOD_LABELS[c.plantingMethod]}</Badge>

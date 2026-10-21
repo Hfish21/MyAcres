@@ -1,17 +1,16 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Map as MapIcon } from "lucide-react";
 
 import { useHomestead } from "@/components/homestead-provider";
 import { Window } from "@/components/ui/window";
 import { cropColorMap } from "@/lib/garden/colors";
-import { timelineWindow } from "@/lib/garden/insights";
 import { translatePolygon } from "@/lib/garden/geometry";
 import type { Point, Space, SpaceInput } from "@/lib/garden/schema";
 import { GardenCanvas, SunLegend, type CanvasMode } from "@/components/layout/garden-canvas";
 import { LayoutToolbar } from "@/components/layout/layout-toolbar";
-import { DateScrubber } from "@/components/layout/date-scrubber";
 import { SpaceDetailDialog } from "@/components/layout/space-detail-dialog";
 import { SpaceDeleteDialog } from "@/components/spaces/space-delete-dialog";
 
@@ -35,6 +34,8 @@ function metaOf(s: Space): SpaceInput {
     capacityOverride: s.capacityOverride,
     sun: s.sun,
     trellis: s.trellis ?? false,
+    trellisDirection: s.trellisDirection,
+    rowDirection: s.rowDirection,
     notes: s.notes,
   };
 }
@@ -65,13 +66,14 @@ export default function LayoutPage() {
   const crops = React.useMemo(() => [...store.crops], [store, dataVersion]);
 
   const cropColors = React.useMemo(() => cropColorMap(crops), [crops]);
-  const win = React.useMemo(() => timelineWindow(plantings, crops), [plantings, crops]);
 
   const editable = useIsDesktop();
   const [mode, setMode] = React.useState<CanvasMode>("select");
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [draftPoints, setDraftPoints] = React.useState<Point[]>([]);
-  const [asOf, setAsOf] = React.useState<Date>(new Date());
+  // Layout is the editor: beds show what's planted today. The season view (scrubber +
+  // filters) lives in the Garden Map on the Plan page.
+  const asOf = React.useMemo(() => new Date(), []);
   const [editing, setEditing] = React.useState<Space | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<Space | null>(null);
   // In-memory clipboard: ephemeral by design (no persistence — ADR-0002).
@@ -254,14 +256,14 @@ export default function LayoutPage() {
 
           {showSun ? <SunLegend /> : null}
 
-          <DateScrubber
-            start={win.start}
-            end={win.end}
-            value={asOf}
-            onChange={setAsOf}
-            crops={crops.filter((c) => plantings.some((p) => p.cropId === c.id))}
-            cropColors={cropColors}
-          />
+          <p className="text-xs text-ink-3">
+            Beds show what&apos;s planted today. To watch the garden fill and empty over the season
+            and filter it by crop, season, or family, see the{" "}
+            <Link href="/plan" className="text-rust underline underline-offset-2">
+              Garden Map on the Plan page
+            </Link>
+            .
+          </p>
         </div>
       </Window>
 
